@@ -5,7 +5,7 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple 極簡黑白框線風 CSS (徹底修復按鈕 Hover、Focus 顏色與預設邊框陰影)
+# Apple 極簡黑白框線風 CSS (強制按鈕未 hover 前為純白底 + 黑色幼邊框)
 st.markdown("""
 <style>
     /* 全局純白背景與深黑字體 */
@@ -47,8 +47,9 @@ st.markdown("""
         color: #111111 !important;
     }
 
-    /* === 徹底重寫按鈕樣式：白底 + 黑色幼線，封鎖所有預設藍/紅色 Focus 框 === */
-    .stButton > button {
+    /* === 按鈕設定：未 hover 前嚴格保持「純白底 + 黑色幼邊框」 === */
+    div.stButton > button, 
+    div.stFormSubmitButton > button {
         background-color: #FFFFFF !important;
         color: #111111 !important;
         border: 1px solid #111111 !important;
@@ -60,16 +61,20 @@ st.markdown("""
         transition: all 0.2s ease !important;
     }
     
-    .stButton > button:hover {
+    /* Hover 時：轉為 Apple 極淺灰，保持幼邊框 */
+    div.stButton > button:hover, 
+    div.stFormSubmitButton > button:hover {
         background-color: #F5F5F7 !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
         box-shadow: none !important;
     }
     
-    .stButton > button:focus, 
-    .stButton > button:active, 
-    .stButton > button[data-baseweb="button"]:focus {
+    /* Focus / Active 時：鎖死白底或乾淨狀態，杜絕藍/紅邊框同多餘 filling */
+    div.stButton > button:focus, 
+    div.stButton > button:active,
+    div.stFormSubmitButton > button:focus, 
+    div.stFormSubmitButton > button:active {
         background-color: #FFFFFF !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
