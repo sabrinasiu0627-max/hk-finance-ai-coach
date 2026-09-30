@@ -5,7 +5,7 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple 極簡黑白框線風 CSS (強制按鈕未 hover 前為純白底 + 黑色幼邊框)
+# Apple 極簡黑白框線風 CSS (按鈕未 hover 前純白底 + 黑色幼邊框)
 st.markdown("""
 <style>
     /* 全局純白背景與深黑字體 */
@@ -70,7 +70,7 @@ st.markdown("""
         box-shadow: none !important;
     }
     
-    /* Focus / Active 時：鎖死白底或乾淨狀態，杜絕藍/紅邊框同多餘 filling */
+    /* Focus / Active 時：鎖死白底或乾淨狀態，杜絕多餘 filling */
     div.stButton > button:focus, 
     div.stButton > button:active,
     div.stFormSubmitButton > button:focus, 
@@ -210,7 +210,7 @@ if st.button("執行 AI 理財架構分析"):
                 ]
                 
                 response = client.chat.completions.create(
-                    model="meta-llama/Meta-Llama-3-8B-Instruct",
+                    model="meta-llama/Llama-3.1-8B-Instruct",
                     messages=messages,
                     max_tokens=1000
                 )
@@ -236,7 +236,7 @@ if user_question and api_key:
                     {"role": "user", "content": user_question}
                 ]
                 chat_response = client.chat.completions.create(
-                    model="meta-llama/Meta-Llama-3-8B-Instruct",
+                    model="meta-llama/Llama-3.1-8B-Instruct",
                     messages=chat_messages,
                     max_tokens=1000
                 )
