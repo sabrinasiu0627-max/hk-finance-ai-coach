@@ -160,7 +160,7 @@ with st.sidebar.expander("1. 基本資料", expanded=False):
 with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=True):
     salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=30000, step=1000)
     
-    # 香港 MPF 自動計算邏輯：5% 供款，最高入息水平 $30,000 對應上限 $1,500（註：實報最高上限以 30000 計算為 1500）
+    # 香港 MPF 自動計算邏輯：5% 供款，最高入息水平 $30,000 對應上限 $1,500
     mpf_deduction = min(salary_before_mpf * 0.05, 1500) if salary_before_mpf >= 7100 else 0
     salary_after_mpf = salary_before_mpf - mpf_deduction
     
@@ -196,20 +196,18 @@ col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# 嚴格約束 AI 計算與回覆風格，防止 9 唔搭八
+# 嚴格約束 AI 計算與回覆風格（修復負面回饋與鬼打牆）
 system_persona = f"""
 你是一個極度精準、專業且貼地的香港持牌理財教練。
-請嚴格使用以下提供的實質數據進行財務分析與推算，絕對不可胡亂猜測或給出與數據不符的數學計算：
+請嚴格使用以下提供的實質數據進行分析：
 
 【用戶財務硬數據】
 - 年齡：{age}
 - 職業：{occupation}
-- 薪金（MPF前）：${salary_before_mpf:,.0f}
-- MPF扣除：${mpf_deduction:,.0f}
 - 薪金（MPF後實收）：${salary_after_mpf:,.0f}
 - 每月總開支：${monthly_expense:,.0f}
-- 每月淨儲蓄：${monthly_saving:,.0f} （儲蓄率：{savings_rate:.1f}%）
-- 總流動資產（現金+銀行+股票）：${total_liquid_assets:,.0f}
+- 每月淨儲蓄：${monthly_saving:,.0f} （儲蓄率：{savings_rate:.1f}% —— 呢個係極高、非常優秀嘅儲蓄率！）
+- 總流動資產：${total_liquid_assets:,.0f}
 - 強積金(MPF)總額：${mpf:,.0f}
 - 負債：${liabilities:,.0f}
 - 淨資產總值：${net_worth:,.0f}
@@ -218,15 +216,14 @@ system_persona = f"""
 - 家庭負擔：{family_burden}
 - 風險承受能力：{risk_tolerance}
 
-【回覆規則】
-1. 必須使用廣東話與香港繁體中文（例如：「咁」、「囉」、「同埋」、「計計條數」）。
-2. 所有涉及的金額與增長計算必須與上方提供的數據 100% 吻合，絕不能虛構數字。
-3. 語氣要專業、實際、直接點出痛點並給出具體可執行建議。
+【回覆規則（嚴格遵守）】
+1. 必須使用廣東話與香港繁體中文（例如：「咁」、「囉」、「同埋」）。
+2. 用戶嘅儲蓄率係 {savings_rate:.1f}%，屬於非常犀利嘅水平，**絕對唔可以話人低或保守**，必須給予高度讚賞並分析其財政優勢。
+3. 絕不能重複同一句對白，不可陷入鬼打牆，分析要具邏輯、有建設性。
 """
 
 if st.button("執行 AI 理財架構分析"):
     if api_key:
-        # 進度條實作
         progress_bar = st.progress(0, text="正在初始化理財引擎...")
         time.sleep(0.2)
         progress_bar.progress(30, text="正在讀取用戶資產與自動計算現金流...")
@@ -236,7 +233,7 @@ if st.button("執行 AI 理財架構分析"):
         try:
             task_prompt = system_persona + """
             請根據以上真實數據，為用戶完成以下 3 個指定任務：
-            1. 理財健康狀況總結（點評儲蓄率與資產結構）；
+            1. 理財健康狀況總結（稱讚高儲蓄率與點評資產結構）；
             2. 資產增長推算（精確計算 1 年後及 3 年後的淨資產總值增長）；
             3. 具體自動化儲蓄分配方案（建議出糧後各戶口的分帳比例）。
             """
@@ -249,7 +246,8 @@ if st.button("執行 AI 理財架構分析"):
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=messages,
-                max_tokens=1000
+                max_tokens=1000,
+                temperature=0.2  # 壓低創造力，防止鬼打牆與胡言亂語
             )
             
             progress_bar.progress(100, text="分析完成！")
@@ -282,7 +280,8 @@ if user_question and api_key:
             chat_response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=chat_messages,
-                max_tokens=1000
+                max_tokens=1000,
+                temperature=0.2  # 同樣鎖定 temperature 防止對話鬼打牆
             )
             chat_progress.progress(100, text="完成！")
             time.sleep(0.2)
