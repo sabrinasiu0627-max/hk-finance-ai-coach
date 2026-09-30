@@ -5,19 +5,22 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple 極簡黑白風 CSS (純白背景、深黑字體、鎖死黑白按鈕)
+# Apple 極簡黑白框線風 CSS (白底填色 + 黑色幼線外框，完全杜絕實心黑與紅色 Hover)
 st.markdown("""
 <style>
+    /* 全局純白背景與深黑字體 */
     .stApp {
         background-color: #FFFFFF !important;
         color: #111111 !important;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     }
     
+    /* 文字與標題顏色 */
     h1, h2, h3, h4, h5, h6, p, label {
         color: #111111 !important;
     }
 
+    /* 側邊欄風格 */
     [data-testid="stSidebar"] {
         background-color: #FBFBFD !important;
         border-right: 1px solid #D2D2D7 !important;
@@ -26,42 +29,48 @@ st.markdown("""
         color: #111111 !important;
     }
 
+    /* 數據儀表板數字與標籤 */
     [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
         color: #000000 !important;
     }
 
+    /* Apple 框線卡片：白底填色 + 黑色幼線外框 */
     .apple-card {
         border: 1px solid #111111;
         background-color: #FFFFFF;
         padding: 24px;
         border-radius: 12px;
         margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
     .apple-card * {
         color: #111111 !important;
     }
 
+    /* 按鈕設計：白底填色 + 黑色幼線外框 (Apple Outline Button 風格) */
     div.stButton > button {
-        background-color: #000000 !important;
-        color: #FFFFFF !important;
-        border: 1px solid #000000 !important;
+        background-color: #FFFFFF !important;
+        color: #111111 !important;
+        border: 1px solid #111111 !important;
         border-radius: 8px !important;
         padding: 0.5rem 1.2rem;
         font-weight: 500;
+        box-shadow: none !important;
         transition: all 0.2s ease;
     }
+    /* Hover 時改為 Apple 極淺高級灰，保持輕量乾淨 */
     div.stButton > button:hover {
-        background-color: #FFFFFF !important;
+        background-color: #F5F5F7 !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
     }
     div.stButton > button:active, div.stButton > button:focus {
-        background-color: #000000 !important;
-        color: #FFFFFF !important;
+        background-color: #E5E5EA !important;
+        color: #000000 !important;
         border: 1px solid #000000 !important;
     }
 
+    /* 輸入框幼線設計 */
     input, textarea, select {
         border: 1px solid #D2D2D7 !important;
         border-radius: 8px !important;
@@ -73,6 +82,7 @@ st.markdown("""
         box-shadow: none !important;
     }
 
+    /* 極細分隔線 */
     hr {
         border: none;
         height: 1px;
