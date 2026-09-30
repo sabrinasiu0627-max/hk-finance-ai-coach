@@ -5,7 +5,7 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple 極簡黑白框線風 CSS (白底填色 + 黑色幼線外框，完全杜絕實心黑與紅色 Hover)
+# Apple 極簡黑白框線風 CSS (修復 Expander 摺疊選單 Hover 顏色與邊框)
 st.markdown("""
 <style>
     /* 全局純白背景與深黑字體 */
@@ -47,7 +47,7 @@ st.markdown("""
         color: #111111 !important;
     }
 
-    /* 按鈕設計：白底填色 + 黑色幼線外框 (Apple Outline Button 風格) */
+    /* 按鈕設計：白底填色 + 黑色幼線外框 */
     div.stButton > button {
         background-color: #FFFFFF !important;
         color: #111111 !important;
@@ -58,7 +58,6 @@ st.markdown("""
         box-shadow: none !important;
         transition: all 0.2s ease;
     }
-    /* Hover 時改為 Apple 極淺高級灰，保持輕量乾淨 */
     div.stButton > button:hover {
         background-color: #F5F5F7 !important;
         color: #000000 !important;
@@ -68,6 +67,26 @@ st.markdown("""
         background-color: #E5E5EA !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
+    }
+
+    /* 專門修復側邊欄與主畫面 Expander (摺疊選單) 的 Hover 顏色與外框 */
+    [data-testid="stExpander"] {
+        border: 1px solid #D2D2D7 !important;
+        border-radius: 8px !important;
+        background-color: #FFFFFF !important;
+        margin-bottom: 10px;
+    }
+    [data-testid="stExpander"] summary {
+        background-color: #FFFFFF !important;
+        color: #111111 !important;
+        border-radius: 8px !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        background-color: #F5F5F7 !important;
+        color: #000000 !important;
+    }
+    [data-testid="stExpander"] summary * {
+        color: #111111 !important;
     }
 
     /* 輸入框幼線設計 */
@@ -210,4 +229,4 @@ if user_question and api_key:
                 )
                 st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"發生錯誤：{e}")
+                st.error(f"Error: {e}")
