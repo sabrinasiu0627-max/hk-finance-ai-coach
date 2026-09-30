@@ -6,7 +6,7 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# 極致清晰 Apple 黑白風 CSS (徹底解決 Highlight 變黑、Hover 顏色、按鈕與選取反白問題)
+# 極致清晰 Apple 黑白風 CSS (已隱藏 number_input 的加減按鈕)
 st.markdown("""
 <style>
     /* 全局純白背景與深黑清晰字體 */
@@ -21,7 +21,7 @@ st.markdown("""
         color: #111111;
     }
 
-    /* 徹底修正反白選取顏色 (避免選取時變黑色搞到乜都睇唔到) */
+    /* 徹底修正反白選取顏色 */
     ::selection {
         background-color: #000000 !important;
         color: #FFFFFF !important;
@@ -54,7 +54,7 @@ st.markdown("""
         color: #111111 !important;
     }
 
-    /* 修正 Code 區塊與 Highlight 顏色，確保字體清晰可見 */
+    /* 修正 Code 區塊與 Highlight 顏色 */
     code, pre {
         background-color: #F1F1F3 !important;
         color: #111111 !important;
@@ -62,7 +62,7 @@ st.markdown("""
         padding: 2px 6px;
     }
 
-    /* === 按鈕設定：未 hover 前純白底 + 黑色幼邊框；Hover 時極淺灰，文字永久清晰 === */
+    /* === 按鈕設定：未 hover 前純白底 + 黑色幼邊框；Hover 時極淺灰 === */
     div.stButton > button, 
     div.stFormSubmitButton > button {
         background-color: #FFFFFF !important;
@@ -95,7 +95,7 @@ st.markdown("""
         outline: none !important;
     }
 
-    /* 側邊欄與主畫面 Expander (摺疊選單) 樣式 */
+    /* 側邊欄與主畫面 Expander 樣式 */
     [data-testid="stExpander"] {
         border: 1px solid #D2D2D7 !important;
         border-radius: 8px !important;
@@ -115,7 +115,7 @@ st.markdown("""
         color: #111111 !important;
     }
 
-    /* 輸入框幼線設計 */
+    /* 輸入框幼線設計與隱藏數字輸入框的上下加減按鈕 (Spinners) */
     input, textarea, select {
         border: 1px solid #D2D2D7 !important;
         border-radius: 8px !important;
@@ -125,6 +125,14 @@ st.markdown("""
     input:focus {
         border-color: #000000 !important;
         box-shadow: none !important;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none !important;
+        margin: 0 !important;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield !important;
     }
 
     /* 極細分隔線 */
@@ -196,30 +204,28 @@ col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# 嚴格約束 AI 計算與回覆風格（加入防重複/防鬼打牆保護）
+# 淨化後的 System Prompt（配備防重複機制）
 system_persona = f"""
-你是一個極度精準、專業且貼地的香港持牌理財教練。
-請嚴格使用以下提供的實質數據進行分析：
+You are a professional, precise Hong Kong financial coach. 
+You must respond in natural, professional Hong Kong Traditional Chinese.
 
-【用戶財務硬數據】
-- 年齡：{age}
-- 職業：{occupation}
-- 薪金（MPF後實收）：${salary_after_mpf:,.0f}
-- 每月總開支：${monthly_expense:,.0f}
-- 每月淨儲蓄：${monthly_saving:,.0f} （儲蓄率：{savings_rate:.1f}% —— 呢個係極高、非常優秀嘅儲蓄率！）
-- 總流動資產：${total_liquid_assets:,.0f}
-- 強積金(MPF)總額：${mpf:,.0f}
-- 負債：${liabilities:,.0f}
-- 淨資產總值：${net_worth:,.0f}
-- 短期目標：{short_term_goal}
-- 中期目標：{mid_term_goal}
-- 家庭負擔：{family_burden}
-- 風險承受能力：{risk_tolerance}
+[User Financial Data]
+- Age: {age}
+- Occupation: {occupation}
+- Net Salary (after MPF): ${salary_after_mpf:,.0f}
+- Monthly Expense: ${monthly_expense:,.0f}
+- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}% - This is an exceptionally high and elite savings rate)
+- Total Liquid Assets: ${total_liquid_assets:,.0f}
+- MPF Balance: ${mpf:,.0f}
+- Liabilities: ${liabilities:,.0f}
+- Net Worth: ${net_worth:,.0f}
+- Short-term Goal: {short_term_goal}
+- Mid-term Goal: {mid_term_goal}
 
-【回覆規則（嚴格遵守）】
-1. 必須使用廣東話與香港繁體中文（例如：「咁」、「囉」、「同埋」）。
-2. 用戶嘅儲蓄率係 {savings_rate:.1f}%，屬於非常犀利嘅水平，絕對唔可以話人低或保守，必須給予高度讚賞並分析其財政優勢。
-3. 【最重要】絕對禁止任何字元或詞語無限重複（例如出現連續重複字眼），必須保持句子順暢精簡，話完即停，絕對不可陷入鬼打牆或重複循環。
+[Rules]
+1. Acknowledge and praise the user's high savings rate ({savings_rate:.1f}%) directly and professionally.
+2. Provide concrete, accurate numerical analysis based strictly on the provided data.
+3. Keep responses structured, concise, and logical. Do not repeat phrases or words.
 """
 
 if st.button("執行 AI 理財架構分析"):
@@ -231,23 +237,24 @@ if st.button("執行 AI 理財架構分析"):
         progress_bar.progress(60, text="AI 教練正在進行精準財務模型運算...")
         
         try:
-            task_prompt = system_persona + """
-            請根據以上真實數據，為用戶精簡完成以下 3 個指定任務：
-            1. 理財健康狀況總結（稱讚高儲蓄率與點評資產結構）；
-            2. 資產增長推算（精確計算 1 年後及 3 年後的淨資產總值增長）；
-            3. 具體自動化儲蓄分配方案（建議出糧後各戶口的分帳比例）。
+            task_prompt = """
+            請根據用戶的財務數據，提供以下 3 個部分的分析報告：
+            1. 財務健康狀況與儲蓄率評估
+            2. 1年及3年後資產增長推算
+            3. 具體自動化儲蓄分配建議
             """
             messages = [
-                {"role": "system", "content": "你是一個專業、數學精確的香港理財教練，嚴格依賴用戶給出的數字回答，絕對禁止文字重複與鬼打牆。"},
+                {"role": "system", "content": system_persona},
                 {"role": "user", "content": task_prompt}
             ]
             
-            progress_bar.progress(85, text="正在生成貼地廣東話分析報告...")
+            progress_bar.progress(85, text="正在生成分析報告...")
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=messages,
-                max_tokens=600,  # 縮短 token 上限防止模型進入無限 loop
-                temperature=0.2  # 壓低創造力，保持穩定
+                max_tokens=600,
+                temperature=0.3,
+                extra_body={"repetition_penalty": 1.25}
             )
             
             progress_bar.progress(100, text="分析完成！")
@@ -280,8 +287,9 @@ if user_question and api_key:
             chat_response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=chat_messages,
-                max_tokens=600,  # 同樣限制 token 防止 loop
-                temperature=0.2
+                max_tokens=600,
+                temperature=0.3,
+                extra_body={"repetition_penalty": 1.25}
             )
             chat_progress.progress(100, text="完成！")
             time.sleep(0.2)
@@ -291,3 +299,4 @@ if user_question and api_key:
         except Exception as e:
             chat_progress.empty()
             st.error(f"發生錯誤：{e}")
+            
