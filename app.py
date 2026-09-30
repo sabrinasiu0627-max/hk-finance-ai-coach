@@ -1,29 +1,97 @@
 import streamlit as st
 import pandas as pd
-import google.generativeai as genai
+from huggingface_hub import InferenceClient
 
-# Page configuration
-st.set_page_config(page_title="香港理財教練 AI 系統", page_icon="💰", layout="wide")
+# 網頁基本設定
+st.set_page_config(page_title="HK Finance AI Coach", page_icon="⚡", layout="wide")
 
-st.title("🇭🇰 香港理財教練 AI 系統 (半年實測升級版)")
-st.write("結合你嘅理財表格與 Gemini AI，打造專屬嘅智能理財教練！")
+# --- Apple 風格自訂 CSS (極簡黑白、純白背景、幼線外框) ---
+st.markdown("""
+<style>
+    /* 全局 Apple 簡約字體與純白背景 */
+    .stApp {
+        background-color: #FFFFFF;
+        color: #111111;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    }
+    
+    /* 標題與文字微調 */
+    h1, h2, h3, h4 {
+        color: #000000;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+    }
 
-# API Key setup (Supports Streamlit Secrets or Manual Input)
-api_key = st.secrets.get("GEMINI_API_KEY", "")
-if not api_key:
-    with st.sidebar:
-        st.header("⚙️ 系統設定")
-        api_key = st.text_input("請輸入 Google Gemini API Key", type="password")
-        st.markdown("[點此免費取得 Gemini API Key](https://aistudio.google.com/)")
+    /* 側邊欄風格 */
+    [data-testid="stSidebar"] {
+        background-color: #FAFAFA;
+        border-right: 1px solid #E5E5E7;
+    }
+
+    /* 蘋果風線框卡片 (黑線、白底、圓角) */
+    .apple-card {
+        border: 1px solid #000000;
+        background-color: #FFFFFF;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    /* 按鈕：極簡黑底白字 */
+    .stButton > button {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #000000 !important;
+        border-radius: 6px !important;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        background-color: #333333 !important;
+        border-color: #333333 !important;
+    }
+
+    /* 輸入框邊框 */
+    input, textarea, select {
+        border: 1px solid #CCCCCC !important;
+        border-radius: 6px !important;
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    input:focus {
+        border-color: #000000 !important;
+        box-shadow: none !important;
+    }
+
+    /* 俐落的黑色分隔線 */
+    hr {
+        border: none;
+        height: 1px;
+        background-color: #000000;
+        margin: 2rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 頁面標題
+st.title("⚡ HK Finance AI Coach")
+st.write("Minimalist & Data-Driven Financial Intelligence.")
+
+# 預設直接使用你提供的 Hugging Face Token
+default_hf_token = "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"
+
+with st.sidebar:
+    st.header("⚙️ System Settings")
+    api_key = st.text_input("Hugging Face Token", value=default_hf_token, type="password")
 
 if api_key:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    client = InferenceClient(api_key=api_key)
 else:
-    st.warning("⚠️️ 請先在側邊欄輸入 Gemini API Key 以啟動 AI 教練功能。")
+    st.warning("⚠️ 請輸入 Hugging Face Token。")
 
-# --- Sidebar: Financial Profile Inputs ---
-st.sidebar.header("📋 你的理財檔案資料")
+# --- 側邊欄：理財檔案資料輸入 ---
+st.sidebar.header("📋 Client Profile")
 
 with st.sidebar.expander("1. 基本資料", expanded=False):
     age = st.text_input("年齡", "28")
@@ -48,19 +116,19 @@ with st.sidebar.expander("4. 目標與背景", expanded=False):
     family_burden = st.text_input("家庭狀況（家用等）", "每月給家用 5000")
     risk_tolerance = st.selectbox("風險承受能力", ["保守", "中等", "進取"], index=1)
 
-# --- Real-time Calculations ---
+# --- 即時計算核心數據 ---
 total_liquid_assets = bank_balance + cash + stocks
 net_worth = total_liquid_assets + mpf - liabilities
 savings_rate = (monthly_saving / salary_after_mpf) * 100 if salary_after_mpf > 0 else 0
 
-# --- Dashboard Display ---
+# --- 主畫面儀表板數據展示 (Apple 框線卡片風格) ---
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("每月儲蓄率", f"{savings_rate:.1f}%")
 col2.metric("總流動資產", f"${total_liquid_assets:,.0f}")
 col3.metric("淨資產總值", f"${net_worth:,.0f}")
-col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
+col4.metric("預測1年增長", f"${(monthly_saving * 12):,.0f}")
 
-st.divider()
+st.markdown("<hr>", unsafe_allow_html=True)
 
 # --- AI Persona Prompt ---
 system_persona = f"""
@@ -82,10 +150,10 @@ system_persona = f"""
 每次回覆要具體、有數字、可執行，避免空泛建議。
 """
 
-# --- Action Button ---
-if st.button("🚀 讓 AI 教練建立理財檔案、計算增長與設計自動化儲蓄", type="primary"):
+# --- 按鈕觸發：建立檔案與自動化系統設計 ---
+if st.button("🚀 啟動 AI 智能理財架構分析", type="primary"):
     if api_key:
-        with st.spinner("AI 理財教練正在為你分析資產並訂立自動化儲蓄方案..."):
+        with st.spinner("AI 理財教練正在精密分析資產結構中..."):
             try:
                 task_prompt = system_persona + """
                 請根據以上用戶資料，立即幫用戶完成以下 3 個指定任務：
@@ -93,27 +161,43 @@ if st.button("🚀 讓 AI 教練建立理財檔案、計算增長與設計自動
                 2. 計算儲蓄率同資產增長推算（1年、3年）；
                 3. 設計具體嘅自動化儲蓄系統方案（例如出糧自動轉賬分配、各戶口分配比例）。
                 """
-                response = model.generate_content(task_prompt)
+                messages = [
+                    {"role": "system", "content": "你是一個專業、貼地的香港理財教練，請用廣東話同香港繁體中文回答。"},
+                    {"role": "user", "content": task_prompt}
+                ]
+                
+                response = client.chat.completions.create(
+                    model="meta-llama/Meta-Llama-3-8B-Instruct",
+                    messages=messages,
+                    max_tokens=1000
+                )
                 st.success("分析完成！")
-                st.markdown(response.text)
+                st.markdown(f'<div class="apple-card">{response.choices[0].message.content}</div>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"發生錯誤：{e}")
     else:
-                st.error("請先在側邊欄輸入 API Key！")
+        st.error("請先輸入 API Key！")
 
-st.divider()
+st.markdown("<hr>", unsafe_allow_html=True)
 
-# --- Interactive AI Chat ---
-st.subheader("💬 與香港理財教練對話")
-st.write("你可以隨便問教練理財問題，例如：「我呢個洗費水平夠唔夠買樓？」、「下個月花紅點分配？」")
+# --- AI 互動教練對話區 ---
+st.subheader("💬 AI 財務對話空間")
+st.write("向你的專屬教練提問，例如：「我呢個洗費水平夠唔夠買樓？」")
 
-user_question = st.text_input("輸入你想問理財教練的問題：")
+user_question = st.text_input("輸入你想問教練的問題：")
 if user_question and api_key:
-    if st.button("發送問題"):
+    if st.button("發送查詢"):
         with st.spinner("教練思考中..."):
             try:
-                chat_prompt = system_persona + f"\n\n用戶最新提問：{user_question}"
-                chat_response = model.generate_content(chat_prompt)
-                st.markdown(chat_response.text)
+                chat_messages = [
+                    {"role": "system", "content": system_persona},
+                    {"role": "user", "content": user_question}
+                ]
+                chat_response = client.chat.completions.create(
+                    model="meta-llama/Meta-Llama-3-8B-Instruct",
+                    messages=chat_messages,
+                    max_tokens=1000
+                )
+                st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
             except Exception as e:
                 st.error(f"發生錯誤：{e}")
