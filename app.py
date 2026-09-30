@@ -5,7 +5,7 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple 極簡黑白框線風 CSS (修復 Expander 摺疊選單 Hover 顏色與邊框)
+# Apple 極簡黑白框線風 CSS (徹底修復按鈕 Hover、Focus 顏色與預設邊框陰影)
 st.markdown("""
 <style>
     /* 全局純白背景與深黑字體 */
@@ -47,29 +47,37 @@ st.markdown("""
         color: #111111 !important;
     }
 
-    /* 按鈕設計：白底填色 + 黑色幼線外框 */
-    div.stButton > button {
+    /* === 徹底重寫按鈕樣式：白底 + 黑色幼線，封鎖所有預設藍/紅色 Focus 框 === */
+    .stButton > button {
         background-color: #FFFFFF !important;
         color: #111111 !important;
         border: 1px solid #111111 !important;
         border-radius: 8px !important;
-        padding: 0.5rem 1.2rem;
-        font-weight: 500;
+        padding: 0.5rem 1.2rem !important;
+        font-weight: 500 !important;
         box-shadow: none !important;
-        transition: all 0.2s ease;
+        outline: none !important;
+        transition: all 0.2s ease !important;
     }
-    div.stButton > button:hover {
+    
+    .stButton > button:hover {
         background-color: #F5F5F7 !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
+        box-shadow: none !important;
     }
-    div.stButton > button:active, div.stButton > button:focus {
-        background-color: #E5E5EA !important;
+    
+    .stButton > button:focus, 
+    .stButton > button:active, 
+    .stButton > button[data-baseweb="button"]:focus {
+        background-color: #FFFFFF !important;
         color: #000000 !important;
         border: 1px solid #000000 !important;
+        box-shadow: none !important;
+        outline: none !important;
     }
 
-    /* 專門修復側邊欄與主畫面 Expander (摺疊選單) 的 Hover 顏色與外框 */
+    /* 側邊欄與主畫面 Expander (摺疊選單) 樣式 */
     [data-testid="stExpander"] {
         border: 1px solid #D2D2D7 !important;
         border-radius: 8px !important;
@@ -229,4 +237,4 @@ if user_question and api_key:
                 )
                 st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"發生錯誤：{e}")
