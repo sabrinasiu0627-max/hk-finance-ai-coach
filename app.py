@@ -1,23 +1,30 @@
 import streamlit as st
 import pandas as pd
+import time
 from huggingface_hub import InferenceClient
 
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple 極簡黑白框線風 CSS (按鈕未 hover 前純白底 + 黑色幼邊框)
+# 極致清晰 Apple 黑白風 CSS (徹底解決 Highlight 變黑、Hover 顏色、按鈕與選取反白問題)
 st.markdown("""
 <style>
-    /* 全局純白背景與深黑字體 */
+    /* 全局純白背景與深黑清晰字體 */
     .stApp {
         background-color: #FFFFFF !important;
         color: #111111 !important;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     }
     
-    /* 文字與標題顏色 */
-    h1, h2, h3, h4, h5, h6, p, label {
-        color: #111111 !important;
+    /* 文字、標題與標籤顏色鎖死清晰 */
+    h1, h2, h3, h4, h5, h6, p, label, span, div {
+        color: #111111;
+    }
+
+    /* 徹底修正反白選取顏色 (避免選取時變黑色搞到乜都睇唔到) */
+    ::selection {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
     }
 
     /* 側邊欄風格 */
@@ -47,7 +54,15 @@ st.markdown("""
         color: #111111 !important;
     }
 
-    /* === 按鈕設定：未 hover 前嚴格保持「純白底 + 黑色幼邊框」 === */
+    /* 修正 Code 區塊與 Highlight 顏色，確保字體清晰可見 */
+    code, pre {
+        background-color: #F1F1F3 !important;
+        color: #111111 !important;
+        border-radius: 6px;
+        padding: 2px 6px;
+    }
+
+    /* === 按鈕設定：未 hover 前純白底 + 黑色幼邊框；Hover 時極淺灰，文字永久清晰 === */
     div.stButton > button, 
     div.stFormSubmitButton > button {
         background-color: #FFFFFF !important;
@@ -61,23 +76,21 @@ st.markdown("""
         transition: all 0.2s ease !important;
     }
     
-    /* Hover 時：轉為 Apple 極淺灰，保持幼邊框 */
     div.stButton > button:hover, 
     div.stFormSubmitButton > button:hover {
         background-color: #F5F5F7 !important;
-        color: #000000 !important;
-        border: 1px solid #000000 !important;
+        color: #111111 !important;
+        border: 1px solid #111111 !important;
         box-shadow: none !important;
     }
     
-    /* Focus / Active 時：鎖死白底或乾淨狀態，杜絕多餘 filling */
     div.stButton > button:focus, 
     div.stButton > button:active,
     div.stFormSubmitButton > button:focus, 
     div.stFormSubmitButton > button:active {
         background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border: 1px solid #000000 !important;
+        color: #111111 !important;
+        border: 1px solid #111111 !important;
         box-shadow: none !important;
         outline: none !important;
     }
@@ -96,7 +109,7 @@ st.markdown("""
     }
     [data-testid="stExpander"] summary:hover {
         background-color: #F5F5F7 !important;
-        color: #000000 !important;
+        color: #111111 !important;
     }
     [data-testid="stExpander"] summary * {
         color: #111111 !important;
@@ -144,17 +157,25 @@ with st.sidebar.expander("1. 基本資料", expanded=False):
     age = st.text_input("年齡", "28")
     occupation = st.text_input("職業", "文職")
     
-with st.sidebar.expander("2. 薪金與現金流", expanded=True):
-    salary_before_mpf = st.number_input("薪金（MPF前 HKD）", value=30000, step=1000)
-    salary_after_mpf = st.number_input("薪金（MPF後 HKD）", value=28500, step=1000)
+with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=True):
+    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=30000, step=1000)
+    
+    # 香港 MPF 自動計算邏輯：5% 供款，最高入息水平 $30,000 對應上限 $1,500（註：實報最高上限以 30000 計算為 1500）
+    mpf_deduction = min(salary_before_mpf * 0.05, 1500) if salary_before_mpf >= 7100 else 0
+    salary_after_mpf = salary_before_mpf - mpf_deduction
+    
+    st.caption(f"自動計算 MPF 扣除: ${mpf_deduction:,.0f}")
+    st.markdown(f"**實收薪金 (MPF後): ${salary_after_mpf:,.0f}**")
+    
     monthly_expense = st.number_input("每月總開支 (HKD)", value=12000, step=500)
-    monthly_saving = st.number_input("每月儲蓄 (HKD)", value=16500, step=500)
+    monthly_saving = salary_after_mpf - monthly_expense
+    st.info(f"自動計算每月淨儲蓄: ${monthly_saving:,.0f}")
 
 with st.sidebar.expander("3. 資產與負債", expanded=True):
     bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=100000)
     cash = st.number_input("現金 (HKD)", value=5000)
     stocks = st.number_input("股票／ETF (HKD)", value=150000)
-    mpf = st.number_input("強積金 (HKD)", value=80000)
+    mpf = st.number_input("現有強積金總額 (HKD)", value=80000)
     liabilities = st.number_input("負債（卡數／貸款 HKD）", value=0)
 
 with st.sidebar.expander("4. 目標與背景", expanded=False):
@@ -175,49 +196,71 @@ col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
+# 嚴格約束 AI 計算與回覆風格，防止 9 唔搭八
 system_persona = f"""
-你現在擔任一個專業、貼地的香港理財教練 AI。請用繁體中文加適量廣東話回應（例如：用「咁」、「囉」、「冇」、「同埋」、「計計條數」等），幫用戶建立同追蹤理財檔案。
+你是一個極度精準、專業且貼地的香港持牌理財教練。
+請嚴格使用以下提供的實質數據進行財務分析與推算，絕對不可胡亂猜測或給出與數據不符的數學計算：
 
-用戶檔案資料：
+【用戶財務硬數據】
 - 年齡：{age}
 - 職業：{occupation}
-- 薪金（MPF後）：${salary_after_mpf:,.0f}
+- 薪金（MPF前）：${salary_before_mpf:,.0f}
+- MPF扣除：${mpf_deduction:,.0f}
+- 薪金（MPF後實收）：${salary_after_mpf:,.0f}
 - 每月總開支：${monthly_expense:,.0f}
-- 每月儲蓄：${monthly_saving:,.0f}（儲蓄率：{savings_rate:.1f}%）
-- 總流動資產：${total_liquid_assets:,.0f}
+- 每月淨儲蓄：${monthly_saving:,.0f} （儲蓄率：{savings_rate:.1f}%）
+- 總流動資產（現金+銀行+股票）：${total_liquid_assets:,.0f}
+- 強積金(MPF)總額：${mpf:,.0f}
 - 負債：${liabilities:,.0f}
+- 淨資產總值：${net_worth:,.0f}
 - 短期目標：{short_term_goal}
 - 中期目標：{mid_term_goal}
-- 家庭狀況：{family_burden}
+- 家庭負擔：{family_burden}
 - 風險承受能力：{risk_tolerance}
 
-每次回覆要具體、有數字、可執行，避免空泛建議。
+【回覆規則】
+1. 必須使用廣東話與香港繁體中文（例如：「咁」、「囉」、「同埋」、「計計條數」）。
+2. 所有涉及的金額與增長計算必須與上方提供的數據 100% 吻合，絕不能虛構數字。
+3. 語氣要專業、實際、直接點出痛點並給出具體可執行建議。
 """
 
 if st.button("執行 AI 理財架構分析"):
     if api_key:
-        with st.spinner("AI 正在精密分析資產結構中..."):
-            try:
-                task_prompt = system_persona + """
-                請根據以上用戶資料，立即幫用戶完成以下 3 個指定任務：
-                1. 建立理財檔案總結；
-                2. 計算儲蓄率同資產增長推算（1年、3年）；
-                3. 設計具體嘅自動化儲蓄系統方案（例如出糧自動轉賬分配、各戶口分配比例）。
-                """
-                messages = [
-                    {"role": "system", "content": "你是一個專業、貼地的香港理財教練，請用廣東話同香港繁體中文回答。"},
-                    {"role": "user", "content": task_prompt}
-                ]
-                
-                response = client.chat.completions.create(
-                    model="meta-llama/Llama-3.1-8B-Instruct",
-                    messages=messages,
-                    max_tokens=1000
-                )
-                st.success("分析完成")
-                st.markdown(f'<div class="apple-card">{response.choices[0].message.content}</div>', unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"發生錯誤：{e}")
+        # 進度條實作
+        progress_bar = st.progress(0, text="正在初始化理財引擎...")
+        time.sleep(0.2)
+        progress_bar.progress(30, text="正在讀取用戶資產與自動計算現金流...")
+        time.sleep(0.3)
+        progress_bar.progress(60, text="AI 教練正在進行精準財務模型運算...")
+        
+        try:
+            task_prompt = system_persona + """
+            請根據以上真實數據，為用戶完成以下 3 個指定任務：
+            1. 理財健康狀況總結（點評儲蓄率與資產結構）；
+            2. 資產增長推算（精確計算 1 年後及 3 年後的淨資產總值增長）；
+            3. 具體自動化儲蓄分配方案（建議出糧後各戶口的分帳比例）。
+            """
+            messages = [
+                {"role": "system", "content": "你是一個專業、數學精確的香港理財教練，嚴格依賴用戶給出的數字回答。"},
+                {"role": "user", "content": task_prompt}
+            ]
+            
+            progress_bar.progress(85, text="正在生成貼地廣東話分析報告...")
+            response = client.chat.completions.create(
+                model="meta-llama/Llama-3.1-8B-Instruct",
+                messages=messages,
+                max_tokens=1000
+            )
+            
+            progress_bar.progress(100, text="分析完成！")
+            time.sleep(0.3)
+            progress_bar.empty()
+            
+            st.success("分析完成")
+            st.markdown(f'<div class="apple-card">{response.choices[0].message.content}</div>', unsafe_allow_html=True)
+        except Exception as e:
+            progress_bar.empty()
+            st.error(f"發生錯誤：{e}")
     else:
         st.error("請先輸入 API Key。")
 
@@ -229,17 +272,23 @@ st.write("向你的專屬教練提問，例如：「我呢個洗費水平夠唔�
 user_question = st.text_input("輸入你的問題：")
 if user_question and api_key:
     if st.button("發送查詢"):
-        with st.spinner("教練思考中..."):
-            try:
-                chat_messages = [
-                    {"role": "system", "content": system_persona},
-                    {"role": "user", "content": user_question}
-                ]
-                chat_response = client.chat.completions.create(
-                    model="meta-llama/Llama-3.1-8B-Instruct",
-                    messages=chat_messages,
-                    max_tokens=1000
-                )
-                st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"發生錯誤：{e}")
+        chat_progress = st.progress(0, text="教練思考中...")
+        chat_progress.progress(50, text="正在分析您的提問與理財檔案...")
+        try:
+            chat_messages = [
+                {"role": "system", "content": system_persona},
+                {"role": "user", "content": user_question}
+            ]
+            chat_response = client.chat.completions.create(
+                model="meta-llama/Llama-3.1-8B-Instruct",
+                messages=chat_messages,
+                max_tokens=1000
+            )
+            chat_progress.progress(100, text="完成！")
+            time.sleep(0.2)
+            chat_progress.empty()
+            
+            st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
+        except Exception as e:
+            chat_progress.empty()
+            st.error(f"發生錯誤：{e}")
