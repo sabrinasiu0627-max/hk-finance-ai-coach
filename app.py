@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 from huggingface_hub import InferenceClient
 
-# Page configuration
+# 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# Apple minimalist black and white CSS
+# Apple 極簡黑白風 CSS (純白背景、深黑字體、鎖死黑白按鈕)
 st.markdown("""
 <style>
     .stApp {
@@ -14,7 +14,7 @@ st.markdown("""
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     }
     
-    h1, h2, h3, h4, h5, h6, p, span, label, div {
+    h1, h2, h3, h4, h5, h6, p, label {
         color: #111111 !important;
     }
 
@@ -38,8 +38,11 @@ st.markdown("""
         margin-bottom: 24px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
+    .apple-card * {
+        color: #111111 !important;
+    }
 
-    .stButton > button {
+    div.stButton > button {
         background-color: #000000 !important;
         color: #FFFFFF !important;
         border: 1px solid #000000 !important;
@@ -48,9 +51,14 @@ st.markdown("""
         font-weight: 500;
         transition: all 0.2s ease;
     }
-    .stButton > button:hover {
+    div.stButton > button:hover {
         background-color: #FFFFFF !important;
         color: #000000 !important;
+        border: 1px solid #000000 !important;
+    }
+    div.stButton > button:active, div.stButton > button:focus {
+        background-color: #000000 !important;
+        color: #FFFFFF !important;
         border: 1px solid #000000 !important;
     }
 
@@ -74,88 +82,88 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("HK Finance AI Coach")
-st.write("Minimalist and data-driven financial intelligence.")
+st.title("HK Finance AI 理財教練")
+st.write("結合個人資產數據與智能分析的極簡理財系統。")
 
 default_hf_token = "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"
 
 with st.sidebar:
-    st.header("System Settings")
+    st.header("系統設定")
     api_key = st.text_input("Hugging Face Token", value=default_hf_token, type="password")
 
 if api_key:
     client = InferenceClient(api_key=api_key)
 else:
-    st.warning("Please enter your Hugging Face Token.")
+    st.warning("請輸入你的 Hugging Face Token。")
 
-st.sidebar.header("Client Profile")
+st.sidebar.header("客戶理財檔案")
 
-with st.sidebar.expander("1. Basic Information", expanded=False):
-    age = st.text_input("Age", "28")
-    occupation = st.text_input("Occupation", "Office Professional")
+with st.sidebar.expander("1. 基本資料", expanded=False):
+    age = st.text_input("年齡", "28")
+    occupation = st.text_input("職業", "文職")
     
-with st.sidebar.expander("2. Income and Cash Flow", expanded=True):
-    salary_before_mpf = st.number_input("Salary (Before MPF HKD)", value=30000, step=1000)
-    salary_after_mpf = st.number_input("Salary (After MPF HKD)", value=28500, step=1000)
-    monthly_expense = st.number_input("Monthly Expenses (HKD)", value=12000, step=500)
-    monthly_saving = st.number_input("Monthly Savings (HKD)", value=16500, step=500)
+with st.sidebar.expander("2. 薪金與現金流", expanded=True):
+    salary_before_mpf = st.number_input("薪金（MPF前 HKD）", value=30000, step=1000)
+    salary_after_mpf = st.number_input("薪金（MPF後 HKD）", value=28500, step=1000)
+    monthly_expense = st.number_input("每月總開支 (HKD)", value=12000, step=500)
+    monthly_saving = st.number_input("每月儲蓄 (HKD)", value=16500, step=500)
 
-with st.sidebar.expander("3. Assets and Liabilities", expanded=True):
-    bank_balance = st.number_input("Bank Balance (HKD)", value=100000)
-    cash = st.number_input("Cash (HKD)", value=5000)
-    stocks = st.number_input("Stocks / ETFs (HKD)", value=150000)
-    mpf = st.number_input("MPF (HKD)", value=80000)
-    liabilities = st.number_input("Liabilities / Debt (HKD)", value=0)
+with st.sidebar.expander("3. 資產與負債", expanded=True):
+    bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=100000)
+    cash = st.number_input("現金 (HKD)", value=5000)
+    stocks = st.number_input("股票／ETF (HKD)", value=150000)
+    mpf = st.number_input("強積金 (HKD)", value=80000)
+    liabilities = st.number_input("負債（卡數／貸款 HKD）", value=0)
 
-with st.sidebar.expander("4. Goals and Background", expanded=False):
-    short_term_goal = st.text_input("Short-term Goal (1 Year)", "Build 200k emergency fund")
-    mid_term_goal = st.text_input("Mid-term Goal (2-5 Years)", "Save for property down payment / marriage")
-    family_burden = st.text_input("Family Obligations", "Monthly family allowance 5000")
-    risk_tolerance = st.selectbox("Risk Tolerance", ["Conservative", "Moderate", "Aggressive"], index=1)
+with st.sidebar.expander("4. 目標與背景", expanded=False):
+    short_term_goal = st.text_input("短期目標（1年內）", "存夠 20 萬備用金")
+    mid_term_goal = st.text_input("中期目標（2-5年）", "儲首期買樓／結婚")
+    family_burden = st.text_input("家庭狀況（家用等）", "每月給家用 5000")
+    risk_tolerance = st.selectbox("風險承受能力", ["保守", "中等", "進取"], index=1)
 
 total_liquid_assets = bank_balance + cash + stocks
 net_worth = total_liquid_assets + mpf - liabilities
 savings_rate = (monthly_saving / salary_after_mpf) * 100 if salary_after_mpf > 0 else 0
 
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Savings Rate", f"{savings_rate:.1f}%")
-col2.metric("Liquid Assets", f"${total_liquid_assets:,.0f}")
-col3.metric("Net Worth", f"${net_worth:,.0f}")
-col4.metric("Est. 1Y Growth", f"${(monthly_saving * 12):,.0f}")
+col1.metric("每月儲蓄率", f"{savings_rate:.1f}%")
+col2.metric("總流動資產", f"${total_liquid_assets:,.0f}")
+col3.metric("淨資產總值", f"${net_worth:,.0f}")
+col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
 system_persona = f"""
-You are a professional, pragmatic Hong Kong financial coach AI. Respond in traditional Chinese combined with natural conversational Cantonese terms (such as '咁', '囉', '冇', '同埋', '計計條數') to help the user track and build their financial profile.
+你現在擔任一個專業、貼地的香港理財教練 AI。請用繁體中文加適量廣東話回應（例如：用「咁」、「囉」、「冇」、「同埋」、「計計條數」等），幫用戶建立同追蹤理財檔案。
 
-User Profile:
-- Age: {age}
-- Occupation: {occupation}
-- Salary (After MPF): ${salary_after_mpf:,.0f}
-- Monthly Expenses: ${monthly_expense:,.0f}
-- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}%)
-- Total Liquid Assets: ${total_liquid_assets:,.0f}
-- Liabilities: ${liabilities:,.0f}
-- Short-term Goal: {short_term_goal}
-- Mid-term Goal: {mid_term_goal}
-- Family Obligations: {family_burden}
-- Risk Tolerance: {risk_tolerance}
+用戶檔案資料：
+- 年齡：{age}
+- 職業：{occupation}
+- 薪金（MPF後）：${salary_after_mpf:,.0f}
+- 每月總開支：${monthly_expense:,.0f}
+- 每月儲蓄：${monthly_saving:,.0f}（儲蓄率：{savings_rate:.1f}%）
+- 總流動資產：${total_liquid_assets:,.0f}
+- 負債：${liabilities:,.0f}
+- 短期目標：{short_term_goal}
+- 中期目標：{mid_term_goal}
+- 家庭狀況：{family_burden}
+- 風險承受能力：{risk_tolerance}
 
-Keep responses precise, data-driven, and actionable. Avoid vague advice.
+每次回覆要具體、有數字、可執行，避免空泛建議。
 """
 
-if st.button("Run AI Financial Analysis"):
+if st.button("執行 AI 理財架構分析"):
     if api_key:
-        with st.spinner("Analyzing asset structure..."):
+        with st.spinner("AI 正在精密分析資產結構中..."):
             try:
                 task_prompt = system_persona + """
-                Please complete the following 3 tasks based on the user's profile:
-                1. Establish a financial profile summary;
-                2. Calculate savings rate and asset growth projections (1 year, 3 years);
-                3. Design a concrete automated savings system (e.g., auto-transfer proportions across accounts upon payday).
+                請根據以上用戶資料，立即幫用戶完成以下 3 個指定任務：
+                1. 建立理財檔案總結；
+                2. 計算儲蓄率同資產增長推算（1年、3年）；
+                3. 設計具體嘅自動化儲蓄系統方案（例如出糧自動轉賬分配、各戶口分配比例）。
                 """
                 messages = [
-                    {"role": "system", "content": "You are a professional, pragmatic Hong Kong financial coach, responding in Cantonese and Traditional Chinese."},
+                    {"role": "system", "content": "你是一個專業、貼地的香港理財教練，請用廣東話同香港繁體中文回答。"},
                     {"role": "user", "content": task_prompt}
                 ]
                 
@@ -164,22 +172,22 @@ if st.button("Run AI Financial Analysis"):
                     messages=messages,
                     max_tokens=1000
                 )
-                st.success("Analysis Complete")
+                st.success("分析完成")
                 st.markdown(f'<div class="apple-card">{response.choices[0].message.content}</div>', unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"發生錯誤：{e}")
     else:
-        st.error("Please enter your API Key.")
+        st.error("請先輸入 API Key。")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-st.subheader("AI Financial Consultation")
-st.write("Ask your dedicated coach a question, e.g., 'Do I have enough savings to buy a flat?'")
+st.subheader("AI 財務諮詢對話")
+st.write("向你的專屬教練提問，例如：「我呢個洗費水平夠唔夠買樓？」")
 
-user_question = st.text_input("Enter your question:")
+user_question = st.text_input("輸入你的問題：")
 if user_question and api_key:
-    if st.button("Submit Query"):
-        with st.spinner("Thinking..."):
+    if st.button("發送查詢"):
+        with st.spinner("教練思考中..."):
             try:
                 chat_messages = [
                     {"role": "system", "content": system_persona},
@@ -192,4 +200,4 @@ if user_question and api_key:
                 )
                 st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"發生錯誤：{e}")
