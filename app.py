@@ -196,7 +196,7 @@ col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# 嚴格約束 AI 計算與回覆風格（修復負面回饋與鬼打牆）
+# 嚴格約束 AI 計算與回覆風格（加入防重複/防鬼打牆保護）
 system_persona = f"""
 你是一個極度精準、專業且貼地的香港持牌理財教練。
 請嚴格使用以下提供的實質數據進行分析：
@@ -218,8 +218,8 @@ system_persona = f"""
 
 【回覆規則（嚴格遵守）】
 1. 必須使用廣東話與香港繁體中文（例如：「咁」、「囉」、「同埋」）。
-2. 用戶嘅儲蓄率係 {savings_rate:.1f}%，屬於非常犀利嘅水平，**絕對唔可以話人低或保守**，必須給予高度讚賞並分析其財政優勢。
-3. 絕不能重複同一句對白，不可陷入鬼打牆，分析要具邏輯、有建設性。
+2. 用戶嘅儲蓄率係 {savings_rate:.1f}%，屬於非常犀利嘅水平，絕對唔可以話人低或保守，必須給予高度讚賞並分析其財政優勢。
+3. 【最重要】絕對禁止任何字元或詞語無限重複（例如出現連續重複字眼），必須保持句子順暢精簡，話完即停，絕對不可陷入鬼打牆或重複循環。
 """
 
 if st.button("執行 AI 理財架構分析"):
@@ -232,13 +232,13 @@ if st.button("執行 AI 理財架構分析"):
         
         try:
             task_prompt = system_persona + """
-            請根據以上真實數據，為用戶完成以下 3 個指定任務：
+            請根據以上真實數據，為用戶精簡完成以下 3 個指定任務：
             1. 理財健康狀況總結（稱讚高儲蓄率與點評資產結構）；
             2. 資產增長推算（精確計算 1 年後及 3 年後的淨資產總值增長）；
             3. 具體自動化儲蓄分配方案（建議出糧後各戶口的分帳比例）。
             """
             messages = [
-                {"role": "system", "content": "你是一個專業、數學精確的香港理財教練，嚴格依賴用戶給出的數字回答。"},
+                {"role": "system", "content": "你是一個專業、數學精確的香港理財教練，嚴格依賴用戶給出的數字回答，絕對禁止文字重複與鬼打牆。"},
                 {"role": "user", "content": task_prompt}
             ]
             
@@ -246,8 +246,8 @@ if st.button("執行 AI 理財架構分析"):
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=messages,
-                max_tokens=1000,
-                temperature=0.2  # 壓低創造力，防止鬼打牆與胡言亂語
+                max_tokens=600,  # 縮短 token 上限防止模型進入無限 loop
+                temperature=0.2  # 壓低創造力，保持穩定
             )
             
             progress_bar.progress(100, text="分析完成！")
@@ -280,8 +280,8 @@ if user_question and api_key:
             chat_response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=chat_messages,
-                max_tokens=1000,
-                temperature=0.2  # 同樣鎖定 temperature 防止對話鬼打牆
+                max_tokens=600,  # 同樣限制 token 防止 loop
+                temperature=0.2
             )
             chat_progress.progress(100, text="完成！")
             time.sleep(0.2)
