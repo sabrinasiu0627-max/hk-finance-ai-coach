@@ -144,7 +144,7 @@ with st.sidebar.expander("1. 基本資料", expanded=False):
     occupation = st.text_input("職業", "Professional / Sales")
     
 with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=True):
-    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=30000, step=1000)
+    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=22000, step=1000)
     
     mpf_deduction = min(salary_before_mpf * 0.05, 1500) if salary_before_mpf >= 7100 else 0
     salary_after_mpf = salary_before_mpf - mpf_deduction
@@ -152,15 +152,15 @@ with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=Tru
     st.caption(f"自動計算 MPF 扣除: ${mpf_deduction:,.0f}")
     st.markdown(f"**實收薪金 (MPF後): ${salary_after_mpf:,.0f}**")
     
-    monthly_expense = st.number_input("每月總開支 (HKD)", value=12000, step=500)
+    monthly_expense = st.number_input("每月總開支 (HKD)", value=15000, step=500)
     monthly_saving = salary_after_mpf - monthly_expense
     st.info(f"自動計算每月淨儲蓄: ${monthly_saving:,.0f}")
 
 with st.sidebar.expander("3. 資產與負債", expanded=True):
-    bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=100000)
-    cash = st.number_input("現金 (HKD)", value=5000)
-    stocks = st.number_input("股票／ETF (HKD)", value=150000)
-    mpf = st.number_input("現有強積金總額 (HKD)", value=80000)
+    bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=80400)
+    cash = st.number_input("現金 (HKD)", value=0)
+    stocks = st.number_input("股票／ETF (HKD)", value=0)
+    mpf = st.number_input("現有強積金總額 (HKD)", value=0)
     liabilities = st.number_input("負債（卡數／貸款 HKD）", value=0)
 
 with st.sidebar.expander("4. 目標與背景", expanded=False):
@@ -236,7 +236,7 @@ with col_d:
     st.markdown(f"""
     <div class="apple-card">
         <div>
-            <h4>證券／銀行 D</h4>
+            <h4>證券 / 銀行 D</h4>
             <p style="font-size: 13px; color: #555;">投資戶口 (VOO月供)</p>
             <hr style="margin: 10px 0;">
             <p style="font-size: 18px; font-weight: bold;">每月轉 ${recommended_invest_ac:,.0f}</p>
@@ -247,16 +247,19 @@ with col_d:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# --- 📈 視覺化：1年與3年資產增長預測 (用程式碼精密計算 + 圖表) ---
+# --- 📈 視覺化：1年與3年資產增長預測 (已修復圖表排序 Bug) ---
 st.subheader("📈 36 個月資產累積趨勢預測（程式碼實時運算）")
 
-# 建立 36 個月嘅增長數據
 months = list(range(37))
 projected_assets = [total_liquid_assets + (monthly_saving * m) for m in months]
-df_chart = pd.DataFrame({"月份": [f"第 {m} 個月" for m in months], "預測總資產 (HKD)": projected_assets})
-df_chart.set_index("月份", inplace=True)
 
-# 顯示互動圖表 (唔使靠 AI 吹水，100% 準確)
+# 關鍵修復：使用純整數作為索引，確保圖表按時間順序順暢遞增，避免字串排序亂跳
+df_chart = pd.DataFrame({
+    "月份 (第 N 個月)": months, 
+    "預測總資產 (HKD)": projected_assets
+})
+df_chart.set_index("月份 (第 N 個月)", inplace=True)
+
 st.line_chart(df_chart)
 
 col_p1, col_p2 = st.columns(2)
@@ -275,14 +278,13 @@ You must respond in natural, professional Hong Kong Traditional Chinese, using b
 [User Financial Data]
 - Net Salary (after MPF): ${salary_after_mpf:,.0f}
 - Monthly Expense: ${monthly_expense:,.0f}
-- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}% - Exceptionally high)
+- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}%)
 - Total Liquid Assets: ${total_liquid_assets:,.0f}
 - Net Worth: ${net_worth:,.0f}
 
 [Rules]
 1. Output concise, meaningful financial analysis structured purely in bullet points (- or *).
-2. Directly praise the elite savings rate.
-3. Keep it punchy, professional, and entirely free of hallucinated calculations.
+2. Keep it punchy, professional, and entirely free of hallucinated calculations.
 """
 
 if st.button("執行 AI 理財架構分析"):
@@ -294,7 +296,7 @@ if st.button("執行 AI 理財架構分析"):
         try:
             task_prompt = """
             請根據用戶的財務數據與自動化分帳架構，以精簡的 Bullet Points 提供商業級分析：
-            - 現金流與極高儲蓄率（超過 50%）的強勢點評
+            - 現金流與儲蓄率的強勢點評
             - 多戶口自動化分帳（銀行 A、B、C、D）對紀律理財的實戰價值
             - 長期財富累積的核心建議
             """
