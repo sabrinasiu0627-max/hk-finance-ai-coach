@@ -146,7 +146,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("HK Finance AI 理財教練")
-st.write("結合個人資產數據與自動化分帳系統的極簡理財平台。")
+st.write("結合精準數學模型與自動化分帳系統的極簡理財平台。")
 
 default_hf_token = "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"
 
@@ -204,7 +204,7 @@ col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# --- 💡 通用化多戶口自動化分帳儀表板 (Dashboard Format) ---
+# --- 💡 通用化多戶口自動化分帳儀表板 ---
 st.subheader("💳 自動化多戶口分帳儀表板（動態比例模型）")
 st.write("根據你目前實收糧 **$" + f"{salary_after_mpf:,.0f}" + "** 同埋開支結構，系統自動計算出以下各戶口的最佳分配金額：")
 
@@ -269,60 +269,72 @@ with col_d:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# 淨化後的 System Prompt（強制要求 Bullet Points 輸出）
+# --- 📈 視覺化：1年與3年資產增長預測 (用程式碼精密計算 + 圖表) ---
+st.subheader("📈 36 個月資產累積趨勢預測（程式碼實時運算）")
+
+# 建立 36 個月嘅增長數據
+months = list(range(37))
+projected_assets = [total_liquid_assets + (monthly_saving * m) for m in months]
+df_chart = pd.DataFrame({"月份": [f"第 {m} 個月" for m in months], "預測總資產 (HKD)": projected_assets})
+df_chart.set_index("月份", inplace=True)
+
+# 顯示互動圖表 (唔使靠 AI 吹水，100% 準確)
+st.line_chart(df_chart)
+
+col_p1, col_p2 = st.columns(2)
+with col_p1:
+    st.metric("1 年後預測總資產", f"${total_liquid_assets + (monthly_saving * 12):,.0f}", f"+${(monthly_saving * 12):,.0f}")
+with col_p2:
+    st.metric("3 年後預測總資產", f"${total_liquid_assets + (monthly_saving * 36):,.0f}", f"+${(monthly_saving * 36):,.0f}")
+
+st.markdown("<hr>", unsafe_allow_html=True)
+
+# 淨化後的 System Prompt
 system_persona = f"""
 You are a professional, precise Hong Kong financial coach. 
 You must respond in natural, professional Hong Kong Traditional Chinese, using bullet points exclusively for analysis.
 
 [User Financial Data]
-- Age: {age}
-- Occupation: {occupation}
 - Net Salary (after MPF): ${salary_after_mpf:,.0f}
 - Monthly Expense: ${monthly_expense:,.0f}
-- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}% - Exceptionally high and elite)
+- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}% - Exceptionally high)
 - Total Liquid Assets: ${total_liquid_assets:,.0f}
-- MPF Balance: ${mpf:,.0f}
-- Liabilities: ${liabilities:,.0f}
 - Net Worth: ${net_worth:,.0f}
 
 [Rules]
-1. Output concise, meaningful financial analysis structured purely in bullet points (using - or *).
-2. Directly praise the elite savings rate ({savings_rate:.1f}%).
-3. Evaluate the automated multi-account waterfall system (Bank A, B, C, D) practically.
-4. Strictly avoid repetition or fluff. Keep it punchy and professional.
+1. Output concise, meaningful financial analysis structured purely in bullet points (- or *).
+2. Directly praise the elite savings rate.
+3. Keep it punchy, professional, and entirely free of hallucinated calculations.
 """
 
 if st.button("執行 AI 理財架構分析"):
     if api_key:
         progress_bar = st.progress(0, text="正在初始化理財引擎...")
         time.sleep(0.2)
-        progress_bar.progress(30, text="正在讀取用戶資產與自動計算現金流...")
-        time.sleep(0.3)
-        progress_bar.progress(60, text="AI 教練正在進行精準財務模型運算...")
+        progress_bar.progress(50, text="AI 教練正在分析您的理財格局...")
         
         try:
             task_prompt = """
-            請根據用戶的財務數據與多戶口自動化分帳架構，以清晰的 Bullet Points 提供以下分析：
-            - 財政健康狀況與儲蓄率評估
-            - 多戶口自動化分帳（銀行 A、B、C、D）的執行優勢
-            - 1年及3年後資產增長與累積預測
+            請根據用戶的財務數據與自動化分帳架構，以精簡的 Bullet Points 提供商業級分析：
+            - 現金流與極高儲蓄率（超過 50%）的強勢點評
+            - 多戶口自動化分帳（銀行 A、B、C、D）對紀律理財的實戰價值
+            - 長期財富累積的核心建議
             """
             messages = [
                 {"role": "system", "content": system_persona},
                 {"role": "user", "content": task_prompt}
             ]
             
-            progress_bar.progress(85, text="正在生成精簡 Bullet Point 報告...")
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=messages,
-                max_tokens=600,
+                max_tokens=500,
                 temperature=0.3,
                 extra_body={"repetition_penalty": 1.25}
             )
             
-            progress_bar.progress(100, text="分析完成！")
-            time.sleep(0.3)
+            progress_bar.progress(100, text="完成！")
+            time.sleep(0.2)
             progress_bar.empty()
             
             st.success("分析完成")
@@ -332,34 +344,3 @@ if st.button("執行 AI 理財架構分析"):
             st.error(f"發生錯誤：{e}")
     else:
         st.error("請先輸入 API Key。")
-
-st.markdown("<hr>", unsafe_allow_html=True)
-
-st.subheader("AI 財務諮詢對話")
-st.write("向你的專屬教練提問，例如：「呢個自動化分帳系統仲可以點樣優化？」")
-
-user_question = st.text_input("輸入你的問題：")
-if user_question and api_key:
-    if st.button("發送查詢"):
-        chat_progress = st.progress(0, text="教練思考中...")
-        chat_progress.progress(50, text="正在分析您的提問與理財檔案...")
-        try:
-            chat_messages = [
-                {"role": "system", "content": system_persona},
-                {"role": "user", "content": user_question}
-            ]
-            chat_response = client.chat.completions.create(
-                model="meta-llama/Llama-3.1-8B-Instruct",
-                messages=chat_messages,
-                max_tokens=600,
-                temperature=0.3,
-                extra_body={"repetition_penalty": 1.25}
-            )
-            chat_progress.progress(100, text="完成！")
-            time.sleep(0.2)
-            chat_progress.empty()
-            
-            st.markdown(f'<div class="apple-card">{chat_response.choices[0].message.content}</div>', unsafe_allow_html=True)
-        except Exception as e:
-            chat_progress.empty()
-            st.error(f"發生錯誤：{e}")
