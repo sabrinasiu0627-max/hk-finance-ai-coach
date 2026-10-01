@@ -32,7 +32,6 @@ st.markdown("""
         color: #000000 !important;
     }
     
-    /* Apple 框線卡片：強制等高 + 標題強制不換行防 Bug */
     .apple-card {
         border: 1px solid #111111;
         background-color: #FFFFFF;
@@ -125,11 +124,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("HK Finance AI 理財教練")
-st.write("結合精準數學模型、市場環境趨勢與自動化分帳系統的極簡理財平台。")
+st.write("結合合規模型資產配置、現金流自動分帳與宏觀複利預測的極簡理財平台。")
 
 default_hf_token = "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"
 
-# 極簡側邊欄：只放系統設定與快速核心參數
+# 極簡側邊欄
 with st.sidebar:
     st.header("系統設定")
     api_key = st.text_input("Hugging Face Token", value=default_hf_token, type="password")
@@ -138,7 +137,6 @@ with st.sidebar:
     st.header("⚡ 快速現金流微調")
     salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=22000, step=1000)
     monthly_expense = st.number_input("每月總開支 (HKD)", value=15000, step=500)
-    past_3yr_stock_return = st.slider("過去 3 年投資平均回報 (%)", min_value=-10.0, max_value=25.0, value=8.5, step=0.5)
 
 if api_key:
     client = InferenceClient(api_key=api_key)
@@ -151,22 +149,19 @@ salary_after_mpf = salary_before_mpf - mpf_deduction
 monthly_saving = salary_after_mpf - monthly_expense
 savings_rate = (monthly_saving / salary_after_mpf) * 100 if salary_after_mpf > 0 else 0
 
-# 使用 Session State 儲存進階資產數據（避免切換 Tab 時重設）
+# Session State
 if 'bank_balance' not in st.session_state: st.session_state.bank_balance = 80400
 if 'cash' not in st.session_state: st.session_state.cash = 0
 if 'stocks' not in st.session_state: st.session_state.stocks = 0
 if 'mpf' not in st.session_state: st.session_state.mpf = 0
 if 'liabilities' not in st.session_state: st.session_state.liabilities = 0
-if 'age' not in st.session_state: st.session_state.age = "28"
-if 'occupation' not in st.session_state: st.session_state.occupation = "Professional / Sales"
-if 'short_goal' not in st.session_state: st.session_state.short_goal = "存夠 20 萬備用金"
-if 'mid_goal' not in st.session_state: st.session_state.mid_goal = "儲首期買樓／結婚"
+if 'risk_tolerance' not in st.session_state: st.session_state.risk_tolerance = "中等 (Moderate)"
 
 total_liquid_assets = st.session_state.bank_balance + st.session_state.cash + st.session_state.stocks
 net_worth = total_liquid_assets + st.session_state.mpf - st.session_state.liabilities
 
-# --- 主畫面分頁導航 (Tabs) 徹底解決 Sidebar 疲勞 ---
-tab1, tab2, tab3 = st.tabs(["📊 財富儀表板與自動分帳", "⚙️️ 進階資產與目標設定", "🤖 AI 宏觀分析與 3 年預測"])
+# --- 主畫面分頁導航 ---
+tab1, tab2, tab3 = st.tabs(["📊 財富儀表板與自動分帳", "⚙ 模型資產配置與設定", "🤖 AI 宏觀分析與 3 年預測"])
 
 with tab1:
     st.subheader("📌 核心財務指標")
@@ -174,11 +169,11 @@ with tab1:
     c1.metric("每月儲蓄率", f"{savings_rate:.1f}%", f"實收糧 ${salary_after_mpf:,.0f}")
     c2.metric("總流動資產", f"${total_liquid_assets:,.0f}")
     c3.metric("淨資產總值", f"${net_worth:,.0f}")
-    c4.metric("過去3年回報參考", f"{past_3yr_stock_return:.1f}% p.a.")
+    c4.metric("當前投資策略", st.session_state.risk_tolerance)
 
     st.markdown("<hr>", unsafe_allow_html=True)
 
-    st.subheader("💳 自動化多戶口分帳儀表板（動態比例模型）")
+    st.subheader("💳 自動化多戶口分帳儀表板")
     st.write(f"基於你目前實收糧 **${salary_after_mpf:,.0f}** 同開支結構，最佳分配方案如下：")
 
     recommended_cc = min(monthly_expense * 0.65, monthly_expense)
@@ -232,72 +227,92 @@ with tab1:
         <div class="apple-card">
             <div>
                 <h4>證券 / 銀行 D</h4>
-                <p style="font-size: 13px; color: #555;">投資戶口 (VOO月供)</p>
+                <p style="font-size: 13px; color: #555;">模型資產月供戶口</p>
                 <hr style="margin: 10px 0;">
                 <p style="font-size: 18px; font-weight: bold;">每月轉 ${recommended_invest_ac:,.0f}</p>
             </div>
-            <p style="font-size: 12px; margin-top: 15px; color: #333;">(長期資產增長引擎)</p>
+            <p style="font-size: 12px; margin-top: 15px; color: #333;">(對應下方風險配置)</p>
         </div>
         """, unsafe_allow_html=True)
 
 with tab2:
-    st.subheader("⚙️ 進階資產與個人目標設定")
-    st.write("喺呢度輕鬆管理你嘅身家帳目同埋理財里程碑，系統會即時同步到 AI 分析引擎：")
+    st.subheader("⚙️ 資產設定與模型投資組合選擇")
+    st.write("為避免直接推介單一股票嘅法律合規風險，系統採用**「機構級資產配置模型（Model Portfolios）」**。選擇你嘅風險承受能力，系統會自動對應相應嘅 ETF 組合與歷史增長率：")
 
     col_t2_1, col_t2_2 = st.columns(2)
     
     with col_t2_1:
-        st.markdown("#### 💰 資產與負債明細")
+        st.markdown("#### 💰 現有資產與負債")
         st.session_state.bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=st.session_state.bank_balance, step=1000)
         st.session_state.cash = st.number_input("現金 (HKD)", value=st.session_state.cash, step=500)
-        st.session_state.stocks = st.number_input("股票／ETF (HKD)", value=st.session_state.stocks, step=1000)
+        st.session_state.stocks = st.number_input("現有股票／ETF (HKD)", value=st.session_state.stocks, step=1000)
         st.session_state.mpf = st.number_input("現有強積金總額 (HKD)", value=st.session_state.mpf, step=1000)
         st.session_state.liabilities = st.number_input("負債（卡數／貸款 HKD）", value=st.session_state.liabilities, step=500)
 
     with col_t2_2:
-        st.markdown("#### 🎯 個人檔案與目標")
-        st.session_state.age = st.text_input("年齡", value=st.session_state.age)
-        st.session_state.occupation = st.text_input("職業", value=st.session_state.occupation)
-        st.session_state.short_goal = st.text_input("短期目標（1年內）", value=st.session_state.short_goal)
-        st.session_state.mid_goal = st.text_input("中期目標（2-5年）", value=st.session_state.mid_goal)
-        risk_tolerance = st.selectbox("風險承受能力", ["保守", "中等", "進取"], index=1)
+        st.markdown("#### ⚖️ 風險承受能力與模型配置")
+        st.session_state.risk_tolerance = st.selectbox(
+            "選擇風險偏好（決定模型資產與增長率）", 
+            ["保守 (Conservative)", "中等 (Moderate)", "進取 (Aggressive)"],
+            index=1
+        )
+        
+        # 根據選擇顯示對應嘅模型組合細節（話畀用戶知組合買緊乜）
+        if "保守" in st.session_state.risk_tolerance:
+            st.info("**組合成分**：80% 短期國債 ETF / 定存現金 ＋ 20% 高息盈富基金 (2800.HK)\n\n**預期年化回報**：約 4.5%")
+            model_return = 0.045
+        elif "中等" in st.session_state.risk_tolerance:
+            st.info("**組合成分**：70% VOO (標普 500 ETF) / 2800.HK 盈富基金 ＋ 30% 環球債券 ETF\n\n**預期年化回報**：約 8.5%")
+            model_return = 0.085
+        else:
+            st.info("**組合成分**：85% QQQ (納指 100 ETF) / 環球科技增長股 ＋ 15% 核心防守資產\n\n**預期年化回報**：約 12.0%")
+            model_return = 0.12
 
 with tab3:
-    st.subheader("🤖 AI 宏觀市況與 36 個月複利預測引擎")
-    st.write("結合你過去 3 年投資回報基準、當前 2026 年市況，以及實時現金流，一鍵解鎖深度理財架構：")
+    st.subheader("🤖 AI 宏觀市況與 36 個月模型複利預測")
+    
+    # 根據用戶選嘅風險偏好取得預期回報
+    if "保守" in st.session_state.risk_tolerance:
+        active_return = 4.5
+    elif "中等" in st.session_state.risk_tolerance:
+        active_return = 8.5
+    else:
+        active_return = 12.0
 
-    if st.button("執行 AI 理財架構分析與雙線預測", type="primary"):
+    st.write(f"當前選擇模型：**{st.session_state.risk_tolerance}**（模擬年化回報基準：**{active_return}%**）。系統將以呢個資產組合軌跡為核心進行 36 個月推演：")
+
+    if st.button("執行 AI 模型複利與宏觀分析", type="primary"):
         if api_key:
-            progress_bar = st.progress(0, text="正在初始化理財引擎...")
+            progress_bar = st.progress(0, text="正在載入合規模型配置...")
             time.sleep(0.2)
-            progress_bar.progress(30, text="正在擷取過去 3 年回報與現金流數據...")
+            progress_bar.progress(40, text="正在計算模型資產複利軌跡...")
             time.sleep(0.2)
-            progress_bar.progress(60, text="正在結合 2026 最新市況進行宏觀校準...")
+            progress_bar.progress(70, text="正在結合 2026 最新宏觀市況生成評語...")
             
             try:
                 system_persona = f"""
                 You are a professional, precise Hong Kong financial coach in year 2026. 
                 You must respond in natural, professional Hong Kong Traditional Chinese, using bullet points exclusively for analysis.
 
-                [User Financial Data & Performance]
+                [User Financial & Portfolio Data]
                 - Net Salary (after MPF): ${salary_after_mpf:,.0f}
                 - Monthly Expense: ${monthly_expense:,.0f}
                 - Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}%)
                 - Total Liquid Assets: ${total_liquid_assets:,.0f}
-                - Past 3-Year Stock Portfolio Return: {past_3yr_stock_return:.1f}% p.a.
+                - Selected Risk Profile: {st.session_state.risk_tolerance} (Model Return: {active_return}%)
                 - Net Worth: ${net_worth:,.0f}
 
                 [Rules]
-                1. Output concise, meaningful financial analysis structured purely in bullet points (- or *).
-                2. Analyze the coming 3-year growth trend by referencing the user's past 3-year performance ({past_3yr_stock_return:.1f}%) and current 2026 macroeconomic market conditions.
-                3. Keep it punchy, professional, and entirely free of hallucinated calculations.
+                1. Output concise financial analysis structured purely in bullet points (- or *).
+                2. Evaluate the chosen model portfolio's suitability against the user's cash flow and 2026 macroeconomic conditions.
+                3. Keep it professional, objective, and include a polite educational disclaimer that this is a model simulation, not direct financial advice.
                 """
 
                 task_prompt = f"""
-                請根據用戶的財務數據、過去 3 年投資回報（{past_3yr_stock_return:.1f}%）以及 2026 年當前宏觀市場狀況，以精簡的 Bullet Points 提供商業級分析：
-                - 現金流與儲蓄率的強勢點評
-                - 綜合過去 3 年表現與 2026 年最新市況對未來 3 年 VOO / 投資增長的趨勢預測
-                - 多戶口自動化分帳與長期財富累積的實戰建議
+                請根據用戶的現金流狀況與選定的資產配置模型（{st.session_state.risk_tolerance}，基準回報 {active_return}%），結合 2026 年最新宏觀市況，以精簡的 Bullet Points 提供分析：
+                - 現金流與儲蓄率評估
+                - 該模型資產配置（如 VOO / 盈富 / 債券等組合）在當前市況下的表現潛力
+                - 長期紀律執行的實戰建議與合規提示
                 """
                 
                 messages = [
@@ -317,18 +332,17 @@ with tab3:
                 time.sleep(0.2)
                 progress_bar.empty()
                 
-                st.success("AI 市況分析與雙線複利預測已完成")
+                st.success("AI 模型分析與複利預測已完成")
                 
                 # 顯示 AI 分析報告
-                st.markdown(f'<div class="apple-card"><h4>🤖 AI 宏觀市況與 3 年增長分析報告</h4>{response.choices[0].message.content}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="apple-card"><h4>🤖 AI 模型資產與市況分析報告</h4>{response.choices[0].message.content}</div>', unsafe_allow_html=True)
                 
                 # --- 📈 雙線對比圖表 (Comparison Chart) ---
-                st.subheader("📈 36 個月資產累積：AI 複利增長 vs 純現金死儲對比")
-                st.write(f"對比展示：一條係結合你過去回報（{past_3yr_stock_return:.1f}%）嘅 **AI 複利增長軌跡**，另一條係完全唔投資嘅 **純現金儲蓄軌跡**：")
+                st.subheader("📈 36 個月資產累積：模型資產複利增長 vs 純現金儲蓄")
+                st.write(f"對比展示：基於 **{st.session_state.risk_tolerance}** 模型軌跡（年化 {active_return}%）與 **純現金死儲** 嘅 36 個月對比：")
 
                 months = list(range(37))
-                adjusted_annual_rate = max(min(past_3yr_stock_return / 100.0, 0.20), -0.05)
-                monthly_return_rate = (1 + adjusted_annual_rate) ** (1/12) - 1
+                monthly_return_rate = (1 + (active_return / 100.0)) ** (1/12) - 1
 
                 projected_assets = []
                 pure_cash_assets = []
@@ -347,7 +361,7 @@ with tab3:
 
                 df_chart = pd.DataFrame({
                     "月份": months, 
-                    "AI 複利投資總資產 (HKD)": projected_assets,
+                    "模型資產複利總值 (HKD)": projected_assets,
                     "純現金儲蓄軌跡 (HKD)": pure_cash_assets
                 })
                 df_chart.set_index("月份", inplace=True)
@@ -361,9 +375,11 @@ with tab3:
 
                 col_p1, col_p2 = st.columns(2)
                 with col_p1:
-                    st.metric("1 年後預測總資產 (複利 vs 純儲蓄)", f"${projected_assets[12]:,.0f}", f"複利超額收益 (Alpha) +${alpha_1yr:,.0f}")
+                    st.metric("1 年後預測總資產 (模型 vs 純儲蓄)", f"${projected_assets[12]:,.0f}", f"複利超額收益 +${alpha_1yr:,.0f}")
                 with col_p2:
-                    st.metric("3 年後預測總資產 (複利 vs 純儲蓄)", f"${projected_assets[36]:,.0f}", f"複利超額收益 (Alpha) +${alpha_3yr:,.0f}")
+                    st.metric("3 年後預測總資產 (模型 vs 純儲蓄)", f"${projected_assets[36]:,.0f}", f"複利超額收益 +${alpha_3yr:,.0f}")
+
+                st.caption("⚠️ **免責聲明**：以上數據與資產組合模型僅作教育、模擬與財務規劃參考，不構成任何具體證券買賣建議或金融服務邀約。")
 
             except Exception as e:
                 progress_bar.empty()
@@ -371,4 +387,4 @@ with tab3:
         else:
             st.error("請先在側邊欄輸入 API Key。")
     else:
-        st.info("💡 準備好後請點擊上方按鈕，即時產生 2026 最新市況報告與雙線資產對比圖！")
+        st.info("💡 準備好後請點擊上方按鈕，即時產生模型複利模擬與宏觀市況報告！")
