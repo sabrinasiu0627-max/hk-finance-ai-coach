@@ -6,28 +6,21 @@ from huggingface_hub import InferenceClient
 # 網頁基本設定
 st.set_page_config(page_title="HK Finance AI Coach", page_icon="", layout="wide")
 
-# 極致清晰 Apple 黑白風 CSS (已隱藏 number_input 的加減按鈕)
+# 極致清晰 Apple 黑白風 CSS (已修正卡片標題換行 Bug)
 st.markdown("""
 <style>
-    /* 全局純白背景與深黑清晰字體 */
     .stApp {
         background-color: #FFFFFF !important;
         color: #111111 !important;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
     }
-    
-    /* 文字、標題與標籤顏色鎖死清晰 */
     h1, h2, h3, h4, h5, h6, p, label, span, div {
         color: #111111;
     }
-
-    /* 徹底修正反白選取顏色 */
     ::selection {
         background-color: #000000 !important;
         color: #FFFFFF !important;
     }
-
-    /* 側邊欄風格 */
     [data-testid="stSidebar"] {
         background-color: #FBFBFD !important;
         border-right: 1px solid #D2D2D7 !important;
@@ -35,34 +28,40 @@ st.markdown("""
     [data-testid="stSidebar"] * {
         color: #111111 !important;
     }
-
-    /* 數據儀表板數字與標籤 */
     [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
         color: #000000 !important;
     }
-
-    /* Apple 框線卡片：白底填色 + 黑色幼線外框 */
+    
+    /* Apple 框線卡片：強制等高 + 標題強制不換行防 Bug */
     .apple-card {
         border: 1px solid #111111;
         background-color: #FFFFFF;
-        padding: 24px;
+        padding: 20px;
         border-radius: 12px;
         margin-bottom: 24px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+    }
+    .apple-card h4 {
+        font-size: 1.1rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        margin-bottom: 4px !important;
     }
     .apple-card * {
         color: #111111 !important;
     }
-
-    /* 修正 Code 區塊與 Highlight 顏色 */
+    
     code, pre {
         background-color: #F1F1F3 !important;
         color: #111111 !important;
         border-radius: 6px;
         padding: 2px 6px;
     }
-
-    /* === 按鈕設定：未 hover 前純白底 + 黑色幼邊框；Hover 時極淺灰 === */
     div.stButton > button, 
     div.stFormSubmitButton > button {
         background-color: #FFFFFF !important;
@@ -75,7 +74,6 @@ st.markdown("""
         outline: none !important;
         transition: all 0.2s ease !important;
     }
-    
     div.stButton > button:hover, 
     div.stFormSubmitButton > button:hover {
         background-color: #F5F5F7 !important;
@@ -83,19 +81,6 @@ st.markdown("""
         border: 1px solid #111111 !important;
         box-shadow: none !important;
     }
-    
-    div.stButton > button:focus, 
-    div.stButton > button:active,
-    div.stFormSubmitButton > button:focus, 
-    div.stFormSubmitButton > button:active {
-        background-color: #FFFFFF !important;
-        color: #111111 !important;
-        border: 1px solid #111111 !important;
-        box-shadow: none !important;
-        outline: none !important;
-    }
-
-    /* 側邊欄與主畫面 Expander 樣式 */
     [data-testid="stExpander"] {
         border: 1px solid #D2D2D7 !important;
         border-radius: 8px !important;
@@ -111,11 +96,6 @@ st.markdown("""
         background-color: #F5F5F7 !important;
         color: #111111 !important;
     }
-    [data-testid="stExpander"] summary * {
-        color: #111111 !important;
-    }
-
-    /* 輸入框幼線設計與隱藏數字輸入框的上下加減按鈕 (Spinners) */
     input, textarea, select {
         border: 1px solid #D2D2D7 !important;
         border-radius: 8px !important;
@@ -134,8 +114,6 @@ st.markdown("""
     input[type="number"] {
         -moz-appearance: textfield !important;
     }
-
-    /* 極細分隔線 */
     hr {
         border: none;
         height: 1px;
