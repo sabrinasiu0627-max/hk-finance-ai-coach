@@ -163,28 +163,28 @@ else:
 st.sidebar.header("客戶理財檔案")
 
 with st.sidebar.expander("1. 基本資料", expanded=False):
-    age = st.text_input("年齡", "28")
-    occupation = st.text_input("職業", "文職")
+    age = st.text_input("年齡", "")
+    occupation = st.text_input("職業", "")
     
 with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=True):
-    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=30000, step=1000)
+    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=0, step=1000)
     
     # 香港 MPF 自動計算邏輯：5% 供款，最高入息水平 $30,000 對應上限 $1,500
-    mpf_deduction = min(salary_before_mpf * 0.05, 1500) if salary_before_mpf >= 7100 else 0
+    mpf_deduction = min(salary_before_mpf * 0.05) if salary_before_mpf >= 7100 else 0
     salary_after_mpf = salary_before_mpf - mpf_deduction
     
     st.caption(f"自動計算 MPF 扣除: ${mpf_deduction:,.0f}")
     st.markdown(f"**實收薪金 (MPF後): ${salary_after_mpf:,.0f}**")
     
-    monthly_expense = st.number_input("每月總開支 (HKD)", value=12000, step=500)
+    monthly_expense = st.number_input("每月總開支 (HKD)", value=0, step=500)
     monthly_saving = salary_after_mpf - monthly_expense
     st.info(f"自動計算每月淨儲蓄: ${monthly_saving:,.0f}")
 
 with st.sidebar.expander("3. 資產與負債", expanded=True):
-    bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=100000)
-    cash = st.number_input("現金 (HKD)", value=5000)
-    stocks = st.number_input("股票／ETF (HKD)", value=150000)
-    mpf = st.number_input("現有強積金總額 (HKD)", value=80000)
+    bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=0)
+    cash = st.number_input("現金 (HKD)", value=0)
+    stocks = st.number_input("股票／ETF (HKD)", value=0)
+    mpf = st.number_input("現有強積金總額 (HKD)", value=0)
     liabilities = st.number_input("負債（卡數／貸款 HKD）", value=0)
 
 with st.sidebar.expander("4. 目標與背景", expanded=False):
