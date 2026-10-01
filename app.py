@@ -163,7 +163,7 @@ st.sidebar.header("客戶理財檔案")
 
 with st.sidebar.expander("1. 基本資料", expanded=False):
     age = st.text_input("年齡", "28")
-    occupation = st.text_input("職業", "Salesperson / 專業職")
+    occupation = st.text_input("職業", "Professional / Sales")
     
 with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=True):
     salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=30000, step=1000)
@@ -204,87 +204,92 @@ col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# --- 💡 新增：自動化多戶口分帳儀表板 (Dashboard Format) ---
-st.subheader("💳 自動化多戶口分帳儀表板（基於你的黃金比例）")
-st.write("根據你目前實收糧 **$" + f"{salary_after_mpf:,.0f}" + "** 同埋開支結構，系統自動計算出以下各戶口的黃金分配公式：")
+# --- 💡 通用化多戶口自動化分帳儀表板 (Dashboard Format) ---
+st.subheader("💳 自動化多戶口分帳儀表板（動態比例模型）")
+st.write("根據你目前實收糧 **$" + f"{salary_after_mpf:,.0f}" + "** 同埋開支結構，系統自動計算出以下各戶口的最佳分配金額：")
 
-# 計算各戶口建議分配金額
-recommended_hsbc_cc = min(monthly_expense * 0.65, monthly_expense) # 假設卡數佔開支大約 65%
-weekly_transfer = recommended_hsbc_cc / 4
-recommended_mox_saving = monthly_saving * 0.75 # 儲蓄嘅 75% 留喺 Mox
-recommended_stock_dca = monthly_saving * 0.25  # 儲蓄嘅 25% 用黎 VOO 月供
-bea_buffer = 5000 # 東亞保留日常現金水位
+recommended_cc = min(monthly_expense * 0.65, monthly_expense)
+weekly_transfer = recommended_cc / 4
+recommended_saving_ac = monthly_saving * 0.75
+recommended_invest_ac = monthly_saving * 0.25
 
 col_a, col_b, col_c, col_d = st.columns(4)
 
 with col_a:
     st.markdown("""
-    <div class="apple-card" style="text-align: center;">
-        <h4>東亞 (BEA)</h4>
-        <p style="font-size: 13px; color: #555;">出糧戶口 ＋ 每日開支</p>
-        <hr style="margin: 10px 0;">
-        <p style="font-size: 18px; font-weight: bold;">維持水位 $5,000</p>
-        <p style="font-size: 12px;">(月尾多出轉去 Mox)</p>
+    <div class="apple-card">
+        <div>
+            <h4>銀行 A</h4>
+            <p style="font-size: 13px; color: #555;">出糧戶口 ＋ 每日開支</p>
+            <hr style="margin: 10px 0;">
+            <p style="font-size: 18px; font-weight: bold;">維持水位 $5,000</p>
+        </div>
+        <p style="font-size: 12px; margin-top: 15px; color: #333;">(月尾多出餘額手動轉走)</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col_b:
     st.markdown(f"""
-    <div class="apple-card" style="text-align: center;">
-        <h4>滙豐 (HSBC)</h4>
-        <p style="font-size: 13px; color: #555;">信用卡自動找數</p>
-        <hr style="margin: 10px 0;">
-        <p style="font-size: 18px; font-weight: bold;">約 ${recommended_hsbc_cc:,.0f} /月</p>
-        <p style="font-size: 12px;">每週自動: ${weekly_transfer:,.0f} × 4</p>
+    <div class="apple-card">
+        <div>
+            <h4>銀行 B</h4>
+            <p style="font-size: 13px; color: #555;">信用卡自動找數專用</p>
+            <hr style="margin: 10px 0;">
+            <p style="font-size: 18px; font-weight: bold;">約 ${recommended_cc:,.0f} /月</p>
+        </div>
+        <p style="font-size: 12px; margin-top: 15px; color: #333;">每週自動: ${weekly_transfer:,.0f} × 4</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col_c:
     st.markdown(f"""
-    <div class="apple-card" style="text-align: center;">
-        <h4>Mox</h4>
-        <p style="font-size: 13px; color: #555;">強制現金儲蓄</p>
-        <hr style="margin: 10px 0;">
-        <p style="font-size: 18px; font-weight: bold;">每月轉 ${recommended_mox_saving:,.0f}</p>
-        <p style="font-size: 12px;">(穩健應急金與目標)</p>
+    <div class="apple-card">
+        <div>
+            <h4>銀行 C</h4>
+            <p style="font-size: 13px; color: #555;">高息儲蓄／備用金</p>
+            <hr style="margin: 10px 0;">
+            <p style="font-size: 18px; font-weight: bold;">每月轉 ${recommended_saving_ac:,.0f}</p>
+        </div>
+        <p style="font-size: 12px; margin-top: 15px; color: #333;">(強制鎖定現金資產)</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col_d:
     st.markdown(f"""
-    <div class="apple-card" style="text-align: center;">
-        <h4>股票戶口</h4>
-        <p style="font-size: 13px; color: #555;">VOO 投資月供</p>
-        <hr style="margin: 10px 0;">
-        <p style="font-size: 18px; font-weight: bold;">每月轉 ${recommended_stock_dca:,.0f}</p>
-        <p style="font-size: 12px;">(資產增長引擎)</p>
+    <div class="apple-card">
+        <div>
+            <h4>證券／銀行 D</h4>
+            <p style="font-size: 13px; color: #555;">投資戶口 (VOO月供)</p>
+            <hr style="margin: 10px 0;">
+            <p style="font-size: 18px; font-weight: bold;">每月轉 ${recommended_invest_ac:,.0f}</p>
+        </div>
+        <p style="font-size: 12px; margin-top: 15px; color: #333;">(長期資產增長引擎)</p>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# 淨化後的 System Prompt
+# 淨化後的 System Prompt（強制要求 Bullet Points 輸出）
 system_persona = f"""
 You are a professional, precise Hong Kong financial coach. 
-You must respond in natural, professional Hong Kong Traditional Chinese.
+You must respond in natural, professional Hong Kong Traditional Chinese, using bullet points exclusively for analysis.
 
 [User Financial Data]
 - Age: {age}
 - Occupation: {occupation}
 - Net Salary (after MPF): ${salary_after_mpf:,.0f}
 - Monthly Expense: ${monthly_expense:,.0f}
-- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}% - This is an exceptionally high and elite savings rate)
+- Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}% - Exceptionally high and elite)
 - Total Liquid Assets: ${total_liquid_assets:,.0f}
 - MPF Balance: ${mpf:,.0f}
 - Liabilities: ${liabilities:,.0f}
 - Net Worth: ${net_worth:,.0f}
-- Short-term Goal: {short_term_goal}
-- Mid-term Goal: {mid_term_goal}
 
 [Rules]
-1. Acknowledge and praise the user's high savings rate ({savings_rate:.1f}%) directly and professionally.
-2. Provide concrete, accurate numerical analysis based strictly on the provided data.
-3. Keep responses structured, concise, and logical. Do not repeat phrases or words.
+1. Output concise, meaningful financial analysis structured purely in bullet points (using - or *).
+2. Directly praise the elite savings rate ({savings_rate:.1f}%).
+3. Evaluate the automated multi-account waterfall system (Bank A, B, C, D) practically.
+4. Strictly avoid repetition or fluff. Keep it punchy and professional.
 """
 
 if st.button("執行 AI 理財架構分析"):
@@ -297,17 +302,17 @@ if st.button("執行 AI 理財架構分析"):
         
         try:
             task_prompt = """
-            請根據用戶的財務數據，提供以下 3 個部分的分析報告：
-            1. 財務健康狀況與儲蓄率評估
-            2. 1年及3年後資產增長推算
-            3. 具體自動化多戶口分帳（BEA、HSBC、Mox、股票戶口）操作建議
+            請根據用戶的財務數據與多戶口自動化分帳架構，以清晰的 Bullet Points 提供以下分析：
+            - 財政健康狀況與儲蓄率評估
+            - 多戶口自動化分帳（銀行 A、B、C、D）的執行優勢
+            - 1年及3年後資產增長與累積預測
             """
             messages = [
                 {"role": "system", "content": system_persona},
                 {"role": "user", "content": task_prompt}
             ]
             
-            progress_bar.progress(85, text="正在生成分析報告...")
+            progress_bar.progress(85, text="正在生成精簡 Bullet Point 報告...")
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=messages,
@@ -331,7 +336,7 @@ if st.button("執行 AI 理財架構分析"):
 st.markdown("<hr>", unsafe_allow_html=True)
 
 st.subheader("AI 財務諮詢對話")
-st.write("向你的專屬教練提問，例如：「我呢個多戶口自動化分帳仲可以點樣優化？」")
+st.write("向你的專屬教練提問，例如：「呢個自動化分帳系統仲可以點樣優化？」")
 
 user_question = st.text_input("輸入你的問題：")
 if user_question and api_key:
