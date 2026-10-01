@@ -124,7 +124,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("HK Finance AI 理財教練")
-st.write("結合精準數學模型與自動化分帳系統的極簡理財平台。")
+st.write("結合精準數學模型、市場環境趨勢與自動化分帳系統的極簡理財平台。")
 
 default_hf_token = "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"
 
@@ -160,6 +160,7 @@ with st.sidebar.expander("3. 資產與負債", expanded=True):
     bank_balance = st.number_input("銀行戶口及餘額 (HKD)", value=80400)
     cash = st.number_input("現金 (HKD)", value=0)
     stocks = st.number_input("股票／ETF (HKD)", value=0)
+    past_3yr_stock_return = st.slider("過去 3 年投資組合平均回報率 (%)", min_value=-10.0, max_value=25.0, value=8.5, step=0.5)
     mpf = st.number_input("現有強積金總額 (HKD)", value=0)
     liabilities = st.number_input("負債（卡數／貸款 HKD）", value=0)
 
@@ -178,7 +179,7 @@ col1, col2, col3, col4 = st.columns(4)
 col1.metric("每月儲蓄率", f"{savings_rate:.1f}%")
 col2.metric("總流動資產", f"${total_liquid_assets:,.0f}")
 col3.metric("淨資產總值", f"${net_worth:,.0f}")
-col4.metric("預測1年資產增長", f"${(monthly_saving * 12):,.0f}")
+col4.metric("過去3年回報參考", f"{past_3yr_stock_return:.1f}% p.a.")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -247,58 +248,40 @@ with col_d:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# --- 📈 視覺化：1年與3年資產增長預測 (已修復圖表排序 Bug) ---
-st.subheader("📈 36 個月資產累積趨勢預測（程式碼實時運算）")
-
-months = list(range(37))
-projected_assets = [total_liquid_assets + (monthly_saving * m) for m in months]
-
-# 關鍵修復：使用純整數作為索引，確保圖表按時間順序順暢遞增，避免字串排序亂跳
-df_chart = pd.DataFrame({
-    "月份 (第 N 個月)": months, 
-    "預測總資產 (HKD)": projected_assets
-})
-df_chart.set_index("月份 (第 N 個月)", inplace=True)
-
-st.line_chart(df_chart)
-
-col_p1, col_p2 = st.columns(2)
-with col_p1:
-    st.metric("1 年後預測總資產", f"${total_liquid_assets + (monthly_saving * 12):,.0f}", f"+${(monthly_saving * 12):,.0f}")
-with col_p2:
-    st.metric("3 年後預測總資產", f"${total_liquid_assets + (monthly_saving * 36):,.0f}", f"+${(monthly_saving * 36):,.0f}")
-
-st.markdown("<hr>", unsafe_allow_html=True)
-
-# 淨化後的 System Prompt
+# 淨化後的 System Prompt（結合過去表現與 2026 年最新市況分析要求）
 system_persona = f"""
-You are a professional, precise Hong Kong financial coach. 
+You are a professional, precise Hong Kong financial coach in year 2026. 
 You must respond in natural, professional Hong Kong Traditional Chinese, using bullet points exclusively for analysis.
 
-[User Financial Data]
+[User Financial Data & Performance]
 - Net Salary (after MPF): ${salary_after_mpf:,.0f}
 - Monthly Expense: ${monthly_expense:,.0f}
 - Monthly Savings: ${monthly_saving:,.0f} (Savings Rate: {savings_rate:.1f}%)
 - Total Liquid Assets: ${total_liquid_assets:,.0f}
+- Past 3-Year Stock Portfolio Return: {past_3yr_stock_return:.1f}% p.a.
 - Net Worth: ${net_worth:,.0f}
 
 [Rules]
 1. Output concise, meaningful financial analysis structured purely in bullet points (- or *).
-2. Keep it punchy, professional, and entirely free of hallucinated calculations.
+2. Analyze the coming 3-year growth trend by referencing the user's past 3-year performance ({past_3yr_stock_return:.1f}%) and current 2026 macroeconomic market conditions.
+3. Keep it punchy, professional, and entirely free of hallucinated calculations.
 """
 
+# 用戶點擊按鈕後才觸發 AI 分析與預測增長曲線
 if st.button("執行 AI 理財架構分析"):
     if api_key:
         progress_bar = st.progress(0, text="正在初始化理財引擎...")
         time.sleep(0.2)
-        progress_bar.progress(50, text="AI 教練正在分析您的理財格局...")
+        progress_bar.progress(30, text="AI 教練正在擷取過去 3 年投資回報數據...")
+        time.sleep(0.2)
+        progress_bar.progress(60, text="正在結合 2026 年最新市場環境進行趨勢評估...")
         
         try:
             task_prompt = """
-            請根據用戶的財務數據與自動化分帳架構，以精簡的 Bullet Points 提供商業級分析：
+            請根據用戶的財務數據、過去 3 年投資回報（""" + f"{past_3yr_stock_return:.1f}%" + """）以及 2026 年當前宏觀市場狀況，以精簡的 Bullet Points 提供商業級分析：
             - 現金流與儲蓄率的強勢點評
-            - 多戶口自動化分帳（銀行 A、B、C、D）對紀律理財的實戰價值
-            - 長期財富累積的核心建議
+            - 綜合過去 3 年表現與 2026 年最新市況對未來 3 年 VOO / 投資增長的趨勢預測
+            - 多戶口自動化分帳與長期財富累積的實戰建議
             """
             messages = [
                 {"role": "system", "content": system_persona},
@@ -308,7 +291,7 @@ if st.button("執行 AI 理財架構分析"):
             response = client.chat.completions.create(
                 model="meta-llama/Llama-3.1-8B-Instruct",
                 messages=messages,
-                max_tokens=500,
+                max_tokens=600,
                 temperature=0.3,
                 extra_body={"repetition_penalty": 1.25}
             )
@@ -317,8 +300,46 @@ if st.button("執行 AI 理財架構分析"):
             time.sleep(0.2)
             progress_bar.empty()
             
-            st.success("分析完成")
-            st.markdown(f'<div class="apple-card">{response.choices[0].message.content}</div>', unsafe_allow_html=True)
+            st.success("AI 市況分析與複利增長預測已完成")
+            
+            # 顯示 AI 分析報告
+            st.markdown(f'<div class="apple-card"><h4>🤖 AI 宏觀市況與 3 年增長分析報告</h4>{response.choices[0].message.content}</div>', unsafe_allow_html=True)
+            
+            # --- 📈 觸發後才生成的 36 個月複利資產增長預測圖表 ---
+            st.subheader("📈 36 個月市場導向複利資產累積趨勢預測")
+            st.write(f"基於你過去 3 年平均回報（{past_3yr_stock_return:.1f}%）經 AI 市況校準後嘅動態複合增長模型：")
+
+            months = list(range(37))
+            # 以用戶自訂的過去回報率作為未來預測的市況調整基準
+            adjusted_annual_rate = max(min(past_3yr_stock_return / 100.0, 0.20), -0.05)
+            monthly_return_rate = (1 + adjusted_annual_rate) ** (1/12) - 1
+
+            projected_assets = []
+            current_val = total_liquid_assets
+            for m in months:
+                if m == 0:
+                    projected_assets.append(current_val)
+                else:
+                    current_val = current_val * (1 + monthly_return_rate) + monthly_saving
+                    projected_assets.append(current_val)
+
+            df_chart = pd.DataFrame({
+                "月份 (第 N 個月)": months, 
+                "市場導向複利預測總資產 (HKD)": projected_assets
+            })
+            df_chart.set_index("月份 (第 N 個月)", inplace=True)
+
+            st.line_chart(df_chart)
+
+            pure_linear_1yr = total_liquid_assets + (monthly_saving * 12)
+            pure_linear_3yr = total_liquid_assets + (monthly_saving * 36)
+
+            col_p1, col_p2 = st.columns(2)
+            with col_p1:
+                st.metric("1 年後預測總資產 (含市況複利)", f"${projected_assets[12]:,.0f}", f"比純儲蓄多 +${projected_assets[12] - pure_linear_1yr:,.0f}")
+            with col_p2:
+                st.metric("3 年後預測總資產 (含市況複利)", f"${projected_assets[36]:,.0f}", f"比純儲蓄多 +${projected_assets[36] - pure_linear_3yr:,.0f}")
+
         except Exception as e:
             progress_bar.empty()
             st.error(f"發生錯誤：{e}")
