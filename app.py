@@ -39,6 +39,7 @@ st.markdown("""
     /* 數據儀表板數字與標籤 */
     [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
         color: #111111 !important;
+        border-right: 1px solid #D2D2D7
     }
 
     /* Apple 框線卡片：白底填色 + 黑色幼線外框 */
