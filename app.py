@@ -167,10 +167,10 @@ with st.sidebar.expander("1. 基本資料", expanded=False):
     occupation = st.text_input("職業", "")
     
 with st.sidebar.expander("2. 薪金與現金流 (MPF自動計算)", expanded=True):
-    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=0, step=1000)
+    salary_before_mpf = st.number_input("每月薪金（MPF前 HKD）", value=30000, step=1000)
     
     # 香港 MPF 自動計算邏輯：5% 供款，最高入息水平 $30,000 對應上限 $1,500
-    mpf_deduction = min(salary_before_mpf * 0.05) if salary_before_mpf >= 7100 else 0
+    mpf_deduction = min(salary_before_mpf * 0.05, 1500) if salary_before_mpf >= 7100 else 0
     salary_after_mpf = salary_before_mpf - mpf_deduction
     
     st.caption(f"自動計算 MPF 扣除: ${mpf_deduction:,.0f}")
